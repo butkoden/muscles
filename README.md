@@ -58,6 +58,15 @@ WSGI and ASGI packages read these structures to build OpenAPI automatically.
 
 More detail: [docs/schema.md](docs/schema.md).
 
+## Value Objects
+
+Muscles supports gradual migration from primitive field validation to domain
+value objects via `ValueObject` + `ValueObjectField`. This lets you keep schema
+and OpenAPI contracts stable while moving business rules into immutable value
+types.
+
+Guide: [docs/value-objects.md](docs/value-objects.md).
+
 ## Rules
 
 Decorators such as `@rules` are intended to attach access control and metadata
