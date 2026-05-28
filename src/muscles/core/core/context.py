@@ -2,6 +2,7 @@ from __future__ import annotations
 from functools import wraps
 from typing import Optional
 from abc import ABC, abstractmethod
+import inspect
 from .heandler import BaseResponseHandler
 from .heandler import ResponseHandler
 
@@ -65,6 +66,7 @@ class Context:
         self._strategy = strategy
         self._error_handler = error_handler
         self._owner = None
+        self._strategy_instance = None
         self.before_start_function_list = []
         self.after_start_function_list = []
         self.context_function_list = []
@@ -182,6 +184,7 @@ class Context:
         Обычно Контекст позволяет заменить объект Стратегии во время выполнения.
         """
         self._strategy = strategy
+        self._strategy_instance = None
 
     def execute(self, *args, **kwargs) -> str:
         """
@@ -196,7 +199,15 @@ class Context:
         for func in self.context_function_list:
             func(self._owner, self)
 
-        strategy = self.strategy()
+        strategy_ref = self.strategy
+        if inspect.isclass(strategy_ref):
+            if self._strategy_instance is None or not isinstance(self._strategy_instance, strategy_ref):
+                self._strategy_instance = strategy_ref()
+            strategy = self._strategy_instance
+        elif callable(strategy_ref) and not hasattr(strategy_ref, 'execute'):
+            strategy = strategy_ref()
+        else:
+            strategy = strategy_ref
         kwargs.update(self._params)
         kwargs.update({'container': self._owner})
         result = strategy.execute(*args, error_handler=self._error_handler, **kwargs)

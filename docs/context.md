@@ -51,3 +51,37 @@ class Muscular(metaclass=ApplicationMeta):
         """ Конда контекст и текущая стратегия определены, ее можно вызвать базовым методом execute """
         self.context.execute()
 ```
+
+
+## Логирование из проекта
+
+Начиная с текущей версии стратегия и сервер принимают логгер из параметров контекста.
+Это означает, что формат, уровень и вывод логов полностью контролируется приложением.
+
+```python
+import logging
+from muscles import Context
+from muscles_wsgi import WsgiStrategy
+
+logger = logging.getLogger("butko.site")
+
+context = Context(
+    WsgiStrategy,
+    options={
+        "logger": logger,  # или строка с именем логгера
+        "debug": False,    # True включает расширенные debug-сообщения фреймворка
+    },
+)
+```
+
+Также можно положить логгер в класс приложения:
+
+```python
+class Muscular(metaclass=ApplicationMeta):
+    logger = logging.getLogger("butko.site")
+```
+
+Если `logger` явно не передан, фреймворк использует именованные логгеры:
+
+- `muscles.asgi`
+- `muscles.wsgi`
