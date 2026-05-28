@@ -157,7 +157,7 @@ class Itinerary:
         self._match_cache[url] = False
         return None
 
-    def _match(self, route, chunks, paths=[], n=0):
+    def _match(self, route, chunks, paths=None, n=0):
         """
         Поиск подходящих узлов
 
@@ -167,6 +167,8 @@ class Itinerary:
         :param n:
         :return:
         """
+        if paths is None:
+            paths = []
         if len(chunks) == 0:
             return
         for node in route.childrens:

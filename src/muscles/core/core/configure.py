@@ -101,6 +101,10 @@ def environ_constructor(loader, node):
     value = loader.construct_scalar(node)
     value = value.split()
     val = os.environ.get(value[0], value[2] if len(value) == 3 and value[1] == 'or' else None)
+    if val is None:
+        return None
+    if not isinstance(val, str):
+        return val
     if val.lower() == 'true':
         return True
     elif val.lower() == 'false':
