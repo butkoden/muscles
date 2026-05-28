@@ -1,16 +1,16 @@
-from ...src.muscles.core.schema import Model
-from ...src.muscles.core.schema import Column
-from ...src.muscles.core.schema import Key
-from ...src.muscles.core.schema import FormParameter
-from ...src.muscles.core.schema import HeaderParameter
-from ...src.muscles.core.schema import QueryParameter
-from ...src.muscles.core.schema import CookieParameter
-from ...src.muscles.core.schema import PathParameter
-from ...src.muscles.core.schema import File
-from ...src.muscles.core.schema import String
-from ...src.muscles.core.schema import Numeric
-from ...src.muscles.core.schema import List
-from ...src.muscles.core.schema import Enum
+from muscles.core.schema import Model
+from muscles.core.schema import Column
+from muscles.core.schema import Key
+from muscles.core.schema import FormParameter
+from muscles.core.schema import HeaderParameter
+from muscles.core.schema import QueryParameter
+from muscles.core.schema import CookieParameter
+from muscles.core.schema import PathParameter
+from muscles.core.schema import File
+from muscles.core.schema import String
+from muscles.core.schema import Numeric
+from muscles.core.schema import List
+from muscles.core.schema import Enum
 
 
 def test_FormParameter():

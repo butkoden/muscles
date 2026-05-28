@@ -1,7 +1,7 @@
 from abc import abstractmethod
-from ...src.muscles.core.core import Dependency
-from ...src.muscles.core.core import inject
-from ...src.muscles.core.core import ApplicationMeta
+from muscles.core.core import Dependency
+from muscles.core.core import inject
+from muscles.core.core import ApplicationMeta
 
 
 class TestInterface:

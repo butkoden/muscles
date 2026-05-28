@@ -1,18 +1,18 @@
-from ...src.muscles.core.schema import Model
-from ...src.muscles.core.schema import Column
-from ...src.muscles.core.schema import Key
-from ...src.muscles.core.schema import JsonRequestBody
-from ...src.muscles.core.schema import MultipartRequestBody
-from ...src.muscles.core.schema import XmlRequestBody
-from ...src.muscles.core.schema import TextRequestBody
-from ...src.muscles.core.schema import PayloadRequestBody
-from ...src.muscles.core.schema import FileRequestBody
-from ...src.muscles.core.schema import FormRequestBody
-from ...src.muscles.core.schema import File
-from ...src.muscles.core.schema import String
-from ...src.muscles.core.schema import Numeric
-from ...src.muscles.core.schema import List
-from ...src.muscles.core.schema import Enum
+from muscles.core.schema import Model
+from muscles.core.schema import Column
+from muscles.core.schema import Key
+from muscles.core.schema import JsonRequestBody
+from muscles.core.schema import MultipartRequestBody
+from muscles.core.schema import XmlRequestBody
+from muscles.core.schema import TextRequestBody
+from muscles.core.schema import PayloadRequestBody
+from muscles.core.schema import FileRequestBody
+from muscles.core.schema import FormRequestBody
+from muscles.core.schema import File
+from muscles.core.schema import String
+from muscles.core.schema import Numeric
+from muscles.core.schema import List
+from muscles.core.schema import Enum
 
 
 def test_JsonRequestBody():

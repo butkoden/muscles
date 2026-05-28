@@ -1,18 +1,18 @@
 import copy
 import uuid
 from abc import abstractmethod
-from ...src.muscles.core.core import ApplicationMeta
-from ...src.muscles.core.core import Dependency
-from ...src.muscles.core.schema import Model
-from ...src.muscles.core.schema import Column
-from ...src.muscles.core.schema import UUID4
-from ...src.muscles.core.schema import Key
-from ...src.muscles.core.schema import String
-from ...src.muscles.core.schema import Enum
-from ...src.muscles.core.schema import Date
-from ...src.muscles.core.schema import DateTime
-from ...src.muscles.core.schema import FormRequestBody
-from ...src.muscles.core.schema import ValidationColumnException
+from muscles.core.core import ApplicationMeta
+from muscles.core.core import Dependency
+from muscles.core.schema import Model
+from muscles.core.schema import Column
+from muscles.core.schema import UUID4
+from muscles.core.schema import Key
+from muscles.core.schema import String
+from muscles.core.schema import Enum
+from muscles.core.schema import Date
+from muscles.core.schema import DateTime
+from muscles.core.schema import FormRequestBody
+from muscles.core.schema import ValidationColumnException
 
 
 class SchTest(Model):

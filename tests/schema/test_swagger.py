@@ -1,14 +1,14 @@
-from ...src.muscles.core.schema import Model
-from ...src.muscles.core.schema import Column
-from ...src.muscles.core.schema import Key
-from ...src.muscles.core.schema import Swagger
-from ...src.muscles.core.schema import QueryParameter
-from ...src.muscles.core.schema import Enum
-from ...src.muscles.core.schema import String
-from ...src.muscles.core.schema import ApiKeyAuthSecurity
-from ...src.muscles.core.schema import JsonResponseBody
-from ...src.muscles.core.schema import XmlResponseBody
-from ...src.muscles.core.schema import TextRequestBody
+from muscles.core.schema import Model
+from muscles.core.schema import Column
+from muscles.core.schema import Key
+from muscles.core.schema import Swagger
+from muscles.core.schema import QueryParameter
+from muscles.core.schema import Enum
+from muscles.core.schema import String
+from muscles.core.schema import ApiKeyAuthSecurity
+from muscles.core.schema import JsonResponseBody
+from muscles.core.schema import XmlResponseBody
+from muscles.core.schema import TextRequestBody
 
 
 def test_Swagger():

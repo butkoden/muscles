@@ -1,8 +1,8 @@
-from ...src.muscles.core.schema import Model
-from ...src.muscles.core.schema import String
-from ...src.muscles.core.schema import Column
-from ...src.muscles.core.schema import Key
-from ...src.muscles.core.schema import Collection
+from muscles.core.schema import Model
+from muscles.core.schema import String
+from muscles.core.schema import Column
+from muscles.core.schema import Key
+from muscles.core.schema import Collection
 
 
 def test_Collection():

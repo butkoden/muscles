@@ -1,9 +1,9 @@
 import os
 import sys
-from ....src.muscles.core.core import Context
-from ....src.muscles.core.core import ApplicationMeta
-from ....src.muscles.core.core import Configurator
-from ....src.muscles.core.core import BaseStrategy
+from muscles.core.core import Context
+from muscles.core.core import ApplicationMeta
+from muscles.core.core import Configurator
+from muscles.core.core import BaseStrategy
 
 directory = os.path.dirname(__file__)
 sys.path.append(f"{directory}")

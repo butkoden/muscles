@@ -2,6 +2,7 @@ import inspect
 import re
 import os
 import traceback
+from collections import defaultdict
 from functools import wraps
 from abc import ABC
 from urllib.parse import unquote
@@ -51,11 +52,16 @@ class Itinerary:
         """
         instance_name = (cls, name)
         if instance_name not in cls._instances:
-            cls._instances[instance_name] = super(Itinerary, cls).__new__(cls)
-            cls._instances[instance_name].node = Node('')
-            cls._instances[instance_name].prefix = prefix
-            cls._instances[instance_name].nodes_map = []
-            cls._instances[instance_name].static_map = []
+            instance = super(Itinerary, cls).__new__(cls)
+            instance.node = Node('')
+            instance.prefix = prefix
+            instance.nodes_map = []
+            instance.static_map = []
+            instance._routes_by_key = defaultdict(list)
+            instance._error_handlers_by_code = {}
+            instance._default_error_handler = None
+            instance._match_cache = {}
+            cls._instances[instance_name] = instance
         return cls._instances[instance_name]
 
     def __init__(self, *args, **kwargs):
@@ -103,7 +109,8 @@ class Itinerary:
         :param rule: Объект правила
         :return:
         """
-        self.rules.append(rule)
+        if not any(item.name == rule.name for item in self.rules):
+            self.rules.append(rule)
 
     def to_url(self, route_key, params):
         """
@@ -121,11 +128,11 @@ class Itinerary:
                 if rule.name == name:
                     return rule.compile(params.get(m.group(2), ''))
 
-        for r in self.nodes_map:
-            if r['key'] == route_key:
-                rs = r['route'].split('/')
-                for s in rs:
-                    l.append(re.sub(r"(\{([\w\d\%\_\-]+)\:?([\w\d\%\_\-]+)?\})", repl, s))
+        for r in self._routes_by_key.get(route_key, []):
+            rs = r['route'].split('/')
+            for s in rs:
+                l.append(re.sub(r"(\{([\w\d\%\_\-]+)\:?([\w\d\%\_\-]+)?\})", repl, s))
+            break
         return '/'.join(l)
 
     def match(self, url):
@@ -137,17 +144,18 @@ class Itinerary:
         """
         if url == '/':
             url = '/main'
+        cached = self._match_cache.get(url)
+        if cached is not None:
+            return cached or None
         chunks = url.split('/')
         if len(chunks) > 0 and chunks[0] == '':
             chunks = chunks[1:]
-        route = self.node
-        routes = []
-        _find_routes = self._match(route, chunks)
-        for _route in _find_routes:
-            for item in self.nodes_map:
-                if item['key'] == _route.key:
-                    routes.append(_route)
-        return routes[0] if len(routes) > 0 else None
+        for route in self._match(self.node, chunks):
+            if route.key and route.key in self._routes_by_key:
+                self._match_cache[url] = route
+                return route
+        self._match_cache[url] = False
+        return None
 
     def _match(self, route, chunks, paths=[], n=0):
         """
@@ -159,6 +167,8 @@ class Itinerary:
         :param n:
         :return:
         """
+        if len(chunks) == 0:
+            return
         for node in route.childrens:
             if node.is_match(chunks[:1][0]):
                 if len(chunks[1:]) == 0:
@@ -242,8 +252,10 @@ class Itinerary:
                 res = False
             return res
 
-        filtered = [static for static in self.static_map if condition(static)]
-        return filtered[0] if len(filtered) > 0 else None
+        for static in self.static_map:
+            if condition(static):
+                return static
+        return None
 
     def _trigger_set_handler(self, handler, *args, **kwargs):
         handler.is_action = kwargs.get('is_action', False)
@@ -288,16 +300,11 @@ class Itinerary:
 
         route = '/'.join([i for i in route.split('/') if i != ''])
 
-        chunks = route.split('/')
-        for c in self.nodes_map:
-            if route == c['route'] and content_type == c['content_type'] and key == c['key'] and method == c['method']:
-                raise Exception('The router must have a unique sequence `key` [%s], `content_type` [%s], `method` ['
-                                '%s], `route` [%s]',
-                                key, content_type, method, route)
-
         if handler is None:
             raise Exception('The `handler` parameter is mandatory')
 
+        chunks = route.split('/')
+        self._match_cache.clear()
         node = self.node
         if key is None or not key:
             key = '.'.join(tuple(chunks[1:] if chunks[0] == '' else chunks))
@@ -324,22 +331,14 @@ class Itinerary:
                 key = _key
                 handler = _handler
 
-                def condition(nm, key=None, route=None, method=None, content_type=None):
-                    res = True
-                    if res and nm['key'] != key:
-                        res = False
-                    if res and nm['route'] != route:
-                        res = False
-                    if res and nm['method'] != method:
-                        res = False
-                    if res and nm['content_type'] != content_type:
-                        res = False
-                    return res
-
-                nm_find = [nm for nm in self.nodes_map if condition(nm, key=key, route=route, method=method,
-                                                                    content_type=content_type)]
-                if len(nm_find) == 0:
-                    self.nodes_map.append({
+                exists = any(
+                    nm['route'] == route
+                    and nm['method'] == method
+                    and nm['content_type'] == content_type
+                    for nm in self._routes_by_key.get(key, [])
+                )
+                if len(self._routes_by_key.get(key, [])) == 0 or not exists:
+                    route_record = {
                         "key": key,
                         "route": route,
                         'method': method,
@@ -347,7 +346,9 @@ class Itinerary:
                         'redirect': redirect,
                         'handler': handler,
                         'instance': self,
-                    })
+                    }
+                    self.nodes_map.append(route_record)
+                    self._routes_by_key[key].append(route_record)
             node = node.instance(chunk, full_route=full_route, key=key, dictionary_key=dictionary_key, rule=rule)
         handler.node = node
         handler.full_route = full_route
@@ -522,6 +523,10 @@ class Itinerary:
             "code": code,
             "handler": handler,
         })
+        if code is None:
+            self._default_error_handler = handler
+        else:
+            self._error_handlers_by_code[code] = handler
 
     def error_handler(self, code=None):
         """
@@ -567,7 +572,7 @@ class Itinerary:
                 res = False
             return res
 
-        filtered = [route for route in self.nodes_map if condition(route)]
+        filtered = [route for route in self._routes_by_key.get(node.key, []) if condition(route)]
         return filtered[0] if len(filtered) > 0 else None, dictionary
 
     def get_current_error_handler(self, error):
@@ -578,16 +583,12 @@ class Itinerary:
         :return:
         """
 
-        def condition(handler):
-            """condition here"""
-            res = True
-            if res and (handler['code'] is None or handler['code'] != error.status):
-                res = False
-            return res
-
-        filtered_default = [handler for handler in self.error_handler_map if handler['code'] is None]
-        filtered = [handler for handler in self.error_handler_map if condition(handler)]
-        return filtered[0] if len(filtered) > 0 else filtered_default[0] if len(filtered_default) > 0 else None
+        handler = self._error_handlers_by_code.get(error.status)
+        if handler:
+            return {"code": error.status, "handler": handler}
+        if self._default_error_handler:
+            return {"code": None, "handler": self._default_error_handler}
+        return None
 
     def print_tree(self):
         """
@@ -643,8 +644,11 @@ class Node(ABC):
         self.weight = 0 if not m else 100
         self.dictionary_key = dictionary_key.lower() if dictionary_key and dictionary_key is not None else None
         self._childrens = []
+        self._children_by_route = {}
         if self.parent is not None:
             self.parent._childrens.append(self)
+            self.parent._childrens.sort(key=lambda node: node.weight)
+            self.parent._children_by_route[self.route] = self
 
     def get_children_node(self, chunk_route):
         """
@@ -652,10 +656,7 @@ class Node(ABC):
         :param chunk_route: Узел для поиска
         :return:
         """
-        for node in self._childrens:
-            if node.route == chunk_route.lower():
-                return node
-        return None
+        return self._children_by_route.get(chunk_route.lower())
 
     def instance(self, chunk_route, key=None, full_route=None, dictionary_key=None, rule=None):
         """
@@ -672,10 +673,11 @@ class Node(ABC):
         if m:
             m = m.group(1).split(':')
             chunk_route = '{%s:%s}' % (m[0], m[1] if len(m) > 1 else 'var')
-        if self.get_children_node(chunk_route):
-            if self.get_children_node(chunk_route).key is None:
-                self.get_children_node(chunk_route).key = key
-            return self.get_children_node(chunk_route)
+        node = self.get_children_node(chunk_route)
+        if node:
+            if node.key is None:
+                node.key = key
+            return node
         else:
             return Node(chunk_route, key=key, full_route=full_route, dictionary_key=dictionary_key,
                         rule=rule, parent=self)

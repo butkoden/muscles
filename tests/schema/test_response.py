@@ -1,11 +1,11 @@
-from ...src.muscles.core.schema import Model
-from ...src.muscles.core.schema import Column
-from ...src.muscles.core.schema import Key
-from ...src.muscles.core.schema import ResponseBody
-from ...src.muscles.core.schema import HtmlResponseBody
-from ...src.muscles.core.schema import JsonResponseBody
-from ...src.muscles.core.schema import XmlResponseBody
-from ...src.muscles.core.schema import TextResponseBody
+from muscles.core.schema import Model
+from muscles.core.schema import Column
+from muscles.core.schema import Key
+from muscles.core.schema import ResponseBody
+from muscles.core.schema import HtmlResponseBody
+from muscles.core.schema import JsonResponseBody
+from muscles.core.schema import XmlResponseBody
+from muscles.core.schema import TextResponseBody
 
 
 def test_ResponseBody():

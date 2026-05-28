@@ -108,8 +108,9 @@ class ApplicationMeta(type):
         """
         if cls not in cls._instances:
             instance = super(ApplicationMeta, cls).__call__(*args, **kwargs)
-            if not hasattr(instance, '_initialized'):
-                instance.initialize(*args, **kwargs)
+            initializer = getattr(instance, 'initialize', None)
+            if not hasattr(instance, '_initialized') and callable(initializer):
+                initializer(*args, **kwargs)
                 instance._initialized = True
             cls._instances[cls] = instance
         return cls._instances[cls]
@@ -134,7 +135,6 @@ class ApplicationMeta(type):
 
         if hasattr(cls, 'package_paths') and isinstance(cls.package_paths, list):
             for path in cls.package_paths:
-                raise Exception('Not found component %s' % f"{directory}/{path}")
                 sys.path.append(f"{directory}/{path}")
         elif hasattr(cls, 'package_paths') and isinstance(cls.package_paths, dict):
             for item in cls.package_paths:

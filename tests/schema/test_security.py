@@ -1,9 +1,9 @@
-from ...src.muscles.core.schema import Model
-from ...src.muscles.core.schema import Column
-from ...src.muscles.core.schema import Key
-from ...src.muscles.core.schema import BasicAuthSecurity
-from ...src.muscles.core.schema import ApiKeyAuthSecurity
-from ...src.muscles.core.schema import BearerAuthSecurity
+from muscles.core.schema import Model
+from muscles.core.schema import Column
+from muscles.core.schema import Key
+from muscles.core.schema import BasicAuthSecurity
+from muscles.core.schema import ApiKeyAuthSecurity
+from muscles.core.schema import BearerAuthSecurity
 
 
 def test_BasicAuthSecurity():
