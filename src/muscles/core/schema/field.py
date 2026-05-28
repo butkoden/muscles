@@ -7,6 +7,7 @@ from typing import Union
 
 from .schema import Schema
 from ..schema.exception import ValidationColumnException
+from .value_object import ValueObject
 
 
 class BaseField(Schema):
@@ -585,6 +586,65 @@ class Text(String):
                                                 str(field), str(value)
                                   ))
         return True
+
+
+class ValueObjectField(BaseField):
+    data_type = "value_object"
+    schema_type = "string"
+
+    def __init__(self, *args, value_object_class=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        if value_object_class is None:
+            raise ValueError("value_object_class is required for ValueObjectField")
+        if not issubclass(value_object_class, ValueObject):
+            raise TypeError("value_object_class must be a ValueObject subclass")
+        self.value_object_class = value_object_class
+
+    def dump(self) -> dict:
+        results = super().dump()
+        results.update({
+            "value_object": self.value_object_class.__name__,
+        })
+        return results
+
+    def setstate(self, value, column):
+        if value is None and callable(column.default):
+            value = column.default()
+        elif value is None:
+            value = column.default
+        if value is None:
+            return None
+        return self.value_object_class.parse(value)
+
+    def getstate(self, value, column):
+        if value is None and callable(column.default):
+            value = column.default()
+        elif value is None:
+            value = column.default
+        if value is None:
+            return None
+        return self.value_object_class.parse(value)
+
+    def validate(self, value, field=None):
+        try:
+            self.value_object_class.parse(value)
+        except Exception as exc:
+            raise ValidationColumnException(
+                self.schema_type,
+                f"The value {field}={value} is not valid for {self.value_object_class.__name__}: {exc}",
+            )
+        return True
+
+    def to_dict(self, value, column):
+        if value is None:
+            return None
+        vo = self.value_object_class.parse(value)
+        return vo.to_primitive()
+
+    def from_dict(self, value, column):
+        if value is None:
+            return None
+        return self.value_object_class.parse(value)
 
 
 class Email(String):
