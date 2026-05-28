@@ -1,6 +1,6 @@
 import sys
 import os
-from ...src.muscles.core.core import Configurator
+from muscles.core.core import Configurator
 
 sys.path.append(f"../")
 

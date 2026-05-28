@@ -294,7 +294,7 @@ class Configurator:
 
         :return: Configurator
         """
-        obj = type(self)(obj=self._object, file=self._file)
+        obj = type(self)(obj=self._object, file=self._file, basedir=self.basedir)
         obj._params = self._params
         return obj
 

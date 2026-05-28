@@ -1,6 +1,6 @@
 from .app.instance import Muscular
 from .app.instance import Strategy
-from ...src.muscles.core.core import BaseStrategy
+from muscles.core.core import BaseStrategy
 
 
 def start_response(status, headers):

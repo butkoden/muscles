@@ -65,6 +65,10 @@ class Context:
         self._strategy = strategy
         self._error_handler = error_handler
         self._owner = None
+        self.before_start_function_list = []
+        self.after_start_function_list = []
+        self.context_function_list = []
+        self._params = {}
         self._params.update(params)
         self._params.update(options)
 

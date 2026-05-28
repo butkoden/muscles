@@ -303,7 +303,7 @@ class UUID4(BaseField):
         return results
 
     def getstate(self, value, column) -> Union[None, uuid.UUID]:
-        if value == 'generate_uuid4':
+        if value in ('generate_uuid4', 'gen'):
             value = uuid.uuid4()
         elif callable(value):
             value = value()
@@ -316,7 +316,7 @@ class UUID4(BaseField):
         return value
 
     def setstate(self, value, column) -> Union[None, uuid.UUID]:
-        if value == 'generate_uuid4':
+        if value in ('generate_uuid4', 'gen'):
             value = uuid.uuid4()
         elif callable(value):
             value = value()

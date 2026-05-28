@@ -1,145 +1,80 @@
-# README: Muscular Framework #
+# Muscles Core
 
-```bash
+Muscles is an experimental framework core. The core package contains the
+application lifecycle, configuration, shared schema objects, routing tree and
+strategy interface. HTTP, ASGI and CLI packages reuse these primitives instead
+of implementing their own framework model.
 
-pybabel extract --mapping-file=/apps/app/babelrc --keywords=_ --keywords=_l --keywords=t --keywords=locale --output-file=/apps/gitmodules/muscles/locales/message.pot /apps/gitmodules/muscles/src
+## Packages
 
-pybabel init --domain=message --input-file=/apps/gitmodules/muscles/locales/message.pot --output-dir=/apps/gitmodules/muscles/locales --locale=en
+- `muscles` - core classes, schemas, routing and application metaclass.
+- `muscles-wsgi` - WSGI runtime, pages, REST API and Swagger UI.
+- `muscles-asgi` - ASGI runtime with the same routing and REST API model.
+- `muscles-cli` - console command strategy built on the same route/group idea.
 
-pybabel update --domain=message --input-file=/apps/gitmodules/muscles/locales/message.pot --output-dir=/apps/gitmodules/muscles/locales --locale=en
+## Application Shape
 
-pybabel compile --domain=message --directory=/apps/gitmodules/muscles/locales
-
-```
-
-### Plans ###
-
-#### Completed ####
-- cli
-- http with wsgi
-- http with server
-- request
-- response
-- redirect
-- header
-- test for wsgi
-- test for http
-- test for cli
-- test for redirect
-- html template
-
-
-#### Must ####
-
-- route with param and alias (main.index)
-- test for abort
-- configuration
-- auto restart
-- documentation
-
-
-### Routers ###
+An application is usually a class with `ApplicationMeta`, a `Configurator` and a
+`Context` bound to a strategy:
 
 ```python
-from muscles.http import routes, Response
-
-def http_main(request):
-    body = '<html><head></head><body>'
-    body += f'#HalloMuscularWorld'
-    body += '</body></html>'
-    return body
+from muscles import ApplicationMeta, Configurator, Context
+from muscles.wsgi import WsgiStrategy
 
 
-@routes.init('/init', method='GET', content_type='text/html')
-def main_test1(request):
-    body = '<html><head></head><body>'
-    body += f'#init GET'
-    body += '</body></html>'
-    return body
+class App(metaclass=ApplicationMeta):
+    config = Configurator(obj={"main": {"DEBUG": True}})
+    context = Context(WsgiStrategy, {})
 
-
-@routes.init('/init', method='PUT', content_type='application/json')
-def main_test1(request):
-    return [{"init": "PUT"}]
-
-
-@routes.init('/init', method='LINK', redirect='http://localhost:8080/test')
-def main_test1(request):
-    return [{"init": "PUT"}]
-
-
-@routes.init('/init', method='DELETE', redirect=(308, '/test'))
-def main_test1(request):
-    return [{"init": "PUT"}]
-
-
-@routes.init('/init', method='GET', content_type='application/json')
-def main_test1(request):
-    return {"init": "GET"}
-
-
-@routes.init('/init', method='POST')
-def main_test1(request):
-    body = '<html><head></head><body>'
-    body += f'#init POST'
-    body += '</body></html>'
-    return body
-
-
-def http_main(request):
-    body = '<html><head></head><body>'
-    body += f'#HalloMuscularWorld'
-    body += '</body></html>'
-    # await asyncio.sleep(5)
-    # time.sleep(5)
-    return body
-
-
-def http_main1(request):
-    body = '<html><head></head><body>'
-    body += f'#HalloMuscularWorld 111'
-    body += '</body></html>'
-    return Response(200, body=body)
-
-
-def http_main2(request):
-    body = '<html><head></head><body>'
-    body += f'#HalloMuscularWorld 111'
-    body += '</body></html>'
-    headers = [('Star', 1)]
-    return (body, 200, headers)
-
-
-def http_main3(request):
-    body = '<html><head></head><body>'
-    body += f'#HalloMuscularWorld 111'
-    body += '</body></html>'
-    headers = [('Star', 1)]
-    return (body, 404, headers)
-
-
-routes.add('/', http_main, method='GET')
-routes.add('/test', http_main1, method='*')
-routes.add('/test2', http_main2, method='*')
-routes.add('/test3', http_main3, method='*')
-
+    def run(self, *args):
+        return self.context.execute(*args, shutup=True)
 ```
-### How do I get set up? ###
 
-* Summary of set up
-* Configuration
-* Dependencies
-* Database configuration
-* How to run tests
-* Deployment instructions
+`Context` owns lifecycle hooks and strategy execution. Keep it instance-local:
+lists of hooks and params must not be shared between app instances.
 
-### Contribution guidelines ###
+## Routing
 
-* Writing tests
-* Code review
-* Other guidelines
+The core routing tree lives in `muscles.core.schema.itinerary`. It is used as a
+generic structure for:
 
-### Who do I talk to? ###
+- page routes;
+- REST API controllers/actions;
+- CLI groups and commands;
+- URL building and reverse lookup.
 
-* Repo owner or admin
-* Other community or team contact
+The current implementation indexes routes by `(path, method)` and keeps a match
+cache. Static routes are checked before dynamic routes, so common paths avoid
+walking the whole tree. Duplicate route registration is idempotent by route
+name, which keeps repeated imports from making routing slower.
+
+More detail: [docs/architecture.md](docs/architecture.md).
+
+## Schemas And OpenAPI
+
+Schema classes (`Model`, `Collection`, `Column`, `String`, `Key`, request and
+response bodies) describe data once and can be reused by runtime strategies. The
+WSGI and ASGI packages read these structures to build OpenAPI automatically.
+
+More detail: [docs/schema.md](docs/schema.md).
+
+## Rules
+
+Decorators such as `@rules` are intended to attach access control and metadata
+to the same objects that routing uses. The important design rule is that a route,
+API action or command should carry its permissions and properties together with
+its schema, so every strategy can enforce or expose them consistently.
+
+## Development
+
+Run tests from each repository with its local `src` on `PYTHONPATH`:
+
+```bash
+PYTHONPATH=src python -m pytest -q
+```
+
+When testing an integration app that uses all packages from sibling checkouts:
+
+```bash
+PYTHONPATH=../muscles/src:../muscles-wsgi/src:../muscles-asgi/src:../muscles-cli/src python -m pytest -q
+```
