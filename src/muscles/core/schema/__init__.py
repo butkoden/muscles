@@ -12,6 +12,7 @@ from .group import *
 from .security import *
 from .itinerary import *
 from .user import *
+from .value_object import *
 
 __all__ = (
     "Itinerary",
@@ -31,6 +32,11 @@ __all__ = (
     "List",
     "Email",
     "Phone",
+    "ValueObject",
+    "EmailValue",
+    "PhoneValue",
+    "DateRangeValue",
+    "ValueObjectField",
     "Time",
     "Enum",
     "Float",

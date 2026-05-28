@@ -47,6 +47,11 @@ from .schema import Boolean
 from .schema import List
 from .schema import Email
 from .schema import Phone
+from .schema import ValueObject
+from .schema import EmailValue
+from .schema import PhoneValue
+from .schema import DateRangeValue
+from .schema import ValueObjectField
 from .schema import Time
 from .schema import Enum
 from .schema import Float
@@ -104,6 +109,11 @@ __all__ = (
     "List",
     "Email",
     "Phone",
+    "ValueObject",
+    "EmailValue",
+    "PhoneValue",
+    "DateRangeValue",
+    "ValueObjectField",
     "Time",
     "Enum",
     "Float",
@@ -179,4 +189,3 @@ __all__ = (
     "GuestUser",
     "User",
 )
-
