@@ -33,9 +33,11 @@ class Group(BaseGroup):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         if len(kwargs) > 0 and hasattr(self, 'columns'):
+            logger = getattr(self, "logger", None)
             for column in self.columns:
                 self.columns[column].value = kwargs.get(column) or self.columns[column].default or None
-                print(column, kwargs.get(column), self.columns[column])
+                if logger is not None:
+                    logger.debug("Group column value initialized", extra={"column": column})
 
     def __init_subclass__(cls, *args, **kwargs):
         super().__init_subclass__()

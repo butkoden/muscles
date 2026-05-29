@@ -17,6 +17,9 @@ class ConfigStorage(object):
     """
     _instances = {}
     basedir = None
+    secret_file = None
+    active_basedir = None
+    active_secret_file = None
 
     def __new__(cls, *args, name: str = None, **kwargs):
         """
@@ -186,7 +189,13 @@ def secret_constructor(loader, node):
     """
     configStorage = ConfigStorage()
     tag = loader.construct_scalar(node)
-    values = yaml.load(open(os.path.join(configStorage.basedir, './config/secret.yaml')), Loader=yaml.FullLoader)
+    basedir = ConfigStorage.active_basedir or configStorage.basedir or ConfigStorage.basedir
+    secret_file = (
+        ConfigStorage.active_secret_file
+        or os.environ.get('CONFIG_SECRET_FILE')
+        or './config/secret.yaml'
+    )
+    values = yaml.load(open(os.path.join(basedir, secret_file)), Loader=yaml.FullLoader)
     return values.get(tag, None)
 
 
@@ -256,7 +265,7 @@ class Configurator:
         self._params.update({key: value})
 
     def __init__(self, obj: typing.Optional[dict] = None, file: str = "configuration.yaml", basedir: str = None,
-                 name: str = None):
+                 name: str = None, secret_file: str = None):
         """
         Конструктор объекта конфигурации. Данный метод позволяет загрузить предопределенную конфиграцию в объект для
         данейшей работе с ним.
@@ -269,16 +278,23 @@ class Configurator:
         if configStorage.basedir is None and basedir is not None:
             Configurator.basedir = basedir
             configStorage.basedir = basedir
+        if basedir is not None:
+            ConfigStorage.basedir = basedir
+        if secret_file is not None:
+            configStorage.secret_file = secret_file
         # else:
         #     Configurator.basedir = os.getcwd()
         #     configStorage.basedir = os.getcwd()
         #     print('==--->configStorage2', basedir)
         try:
+            self._name = name
             self._file = file
             if obj:
                 self._object = obj
             else:
                 try:
+                    ConfigStorage.active_basedir = basedir or configStorage.basedir
+                    ConfigStorage.active_secret_file = secret_file
                     # print(basedir)
                     # print(self._object)
                     # print(configStorage.basedir)
@@ -298,7 +314,14 @@ class Configurator:
 
         :return: Configurator
         """
-        obj = type(self)(obj=self._object, file=self._file, basedir=self.basedir)
+        configStorage = ConfigStorage(self._name)
+        obj = type(self)(
+            obj=self._object,
+            file=self._file,
+            basedir=self.basedir,
+            name=self._name,
+            secret_file=configStorage.secret_file
+        )
         obj._params = self._params
         return obj
 
