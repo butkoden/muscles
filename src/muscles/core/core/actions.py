@@ -238,7 +238,14 @@ class ActionDispatcher:
         for rule in action.rules:
             if not callable(rule):
                 continue
-            allowed = rule(payload, context)
+            try:
+                allowed = rule(payload, context)
+            except ActionError:
+                raise
+            except PermissionError as exc:
+                raise ActionPermissionDenied(action.name, str(exc)) from exc
+            except Exception as exc:
+                raise ActionExecutionError(action.name, str(exc)) from exc
             if not allowed:
                 raise ActionPermissionDenied(action.name, f"Permission denied by rule: {_rule_name(rule)}")
 

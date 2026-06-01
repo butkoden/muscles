@@ -149,6 +149,26 @@ def test_action_dispatcher_checks_callable_rules_in_core():
         ActionDispatcher(app).execute("bookings.denied", {"title": "Call"}, transport="mcp")
 
 
+def test_action_dispatcher_normalizes_permission_error_from_rule():
+    app = _AppA()
+
+    def deny(payload, context):
+        raise PermissionError("Denied by rule engine")
+
+    register_action(
+        app,
+        name="bookings.rule_error",
+        input_schema=BOOKING_INPUT_SCHEMA,
+        rules=[deny],
+        handler=lambda payload, context: payload,
+    )
+
+    with pytest.raises(ActionPermissionDenied) as exc_info:
+        ActionDispatcher(app).execute("bookings.rule_error", {"title": "Call"}, transport="mcp")
+
+    assert exc_info.value.message == "Denied by rule engine"
+
+
 def test_action_dispatcher_calls_handler_with_action_context():
     app = _AppA()
     calls = []
@@ -170,6 +190,26 @@ def test_action_dispatcher_calls_handler_with_action_context():
     assert result.transport == "http"
     assert result.value == {"id": 1, "title": "HTTP"}
     assert calls == [({"title": "HTTP"}, "bookings.dispatch", "http")]
+
+
+def test_action_dispatcher_marks_iterable_handler_result_as_stream():
+    app = _AppA()
+
+    def stream_booking(payload, context):
+        yield {"event": "progress", "title": payload["title"]}
+
+    register_action(
+        app,
+        name="bookings.stream",
+        input_schema=BOOKING_INPUT_SCHEMA,
+        metadata={"stream": True},
+        handler=stream_booking,
+    )
+
+    result = ActionDispatcher(app).execute("bookings.stream", {"title": "Live"}, transport="sse")
+
+    assert result.is_stream is True
+    assert list(result.value) == [{"event": "progress", "title": "Live"}]
 
 
 def test_action_dispatcher_raises_core_not_found_error():
