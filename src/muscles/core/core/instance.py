@@ -6,6 +6,7 @@ import inspect
 import traceback
 from abc import abstractmethod, ABC
 from .dependency import Dependency
+from .registry import ApplicationRegistry
 
 
 class StorageInterface(ABC):
@@ -108,6 +109,8 @@ class ApplicationMeta(type):
         """
         if cls not in cls._instances:
             instance = super(ApplicationMeta, cls).__call__(*args, **kwargs)
+            if not hasattr(instance, "__muscles_registry__"):
+                instance.__muscles_registry__ = ApplicationRegistry()
             initializer = getattr(instance, 'initialize', None)
             if not hasattr(instance, '_initialized') and callable(initializer):
                 initializer(*args, **kwargs)

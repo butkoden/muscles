@@ -14,6 +14,7 @@ from .runtime_mode import is_test
 from .runtime_mode import is_production
 from .inspection import inspect_application
 from .generator import GenerationRequest, GeneratorProvider, GeneratorRegistry
+from .registry import ApplicationRegistry, get_application_registry
 
 
 __all__ = (
@@ -43,6 +44,8 @@ __all__ = (
     "is_test",
     "is_production",
     "inspect_application",
+    "ApplicationRegistry",
+    "get_application_registry",
     "GenerationRequest",
     "GeneratorProvider",
     "GeneratorRegistry",

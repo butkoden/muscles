@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 from .runtime_mode import app_runtime_mode
+from .registry import get_application_registry
 
 
 def _flatten_config(data: Any, prefix: str = "") -> dict[str, Any]:
@@ -32,7 +33,10 @@ def _strategy_name(app) -> list[str]:
 
 
 def _collect_routes(app) -> list[dict[str, Any]]:
-    handlers = getattr(app, "__muscles_routes__", []) or []
+    registry = get_application_registry(app, create=False)
+    handlers = list(getattr(registry, "routes", []) or [])
+    if not handlers:
+        handlers = getattr(app, "__muscles_routes__", []) or []
     routes = []
     for handler in handlers:
         node = getattr(handler, "node", None)
@@ -48,7 +52,10 @@ def _collect_routes(app) -> list[dict[str, Any]]:
 
 
 def _collect_actions(app) -> list[dict[str, Any]]:
-    handlers = getattr(app, "__muscles_routes__", []) or []
+    registry = get_application_registry(app, create=False)
+    handlers = list(getattr(registry, "routes", []) or [])
+    if not handlers:
+        handlers = getattr(app, "__muscles_routes__", []) or []
     actions: list[dict[str, Any]] = []
     for handler in handlers:
         for action in getattr(handler, "actions", []) or []:
@@ -68,6 +75,7 @@ def inspect_application(app=None, include_sensitive: bool = False) -> dict[str, 
     flattened = _flatten_config(config_object)
     values = flattened if include_sensitive else {}
 
+    registry = get_application_registry(app, create=False) if app is not None else None
     return {
         "contract_version": "1",
         "framework": "Muscles",
@@ -76,10 +84,10 @@ def inspect_application(app=None, include_sensitive: bool = False) -> dict[str, 
         "strategies": _strategy_name(app) if app is not None else [],
         "routes": _collect_routes(app) if app is not None else [],
         "actions": _collect_actions(app) if app is not None else [],
-        "schemas": [],
-        "rules": [],
-        "cli": [],
-        "sql": [],
+        "schemas": list(getattr(registry, "schemas", []) or []) if registry is not None else [],
+        "rules": list(getattr(registry, "rules", []) or []) if registry is not None else [],
+        "cli": list(getattr(registry, "cli", []) or []) if registry is not None else [],
+        "sql": list(getattr(registry, "sql", []) or []) if registry is not None else [],
         "commands": [],
         "warnings": [],
         "config": {
