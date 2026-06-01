@@ -193,6 +193,11 @@ The action registry is application-scoped. New protocol projections should avoid
 mutable module-level registries as their source of truth, because those leak
 state between app instances and tests.
 
+User docs:
+
+- English: [docs/action-contract.en.md](docs/action-contract.en.md)
+- Русский: [docs/action-contract.ru.md](docs/action-contract.ru.md)
+
 ## AI Workflow
 
 Official AI-oriented instructions:
