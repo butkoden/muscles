@@ -14,6 +14,7 @@ class ApplicationRegistry:
     actions: list[Any] = field(default_factory=list)
     sql: list[Any] = field(default_factory=list)
     openapi: dict[str, Any] = field(default_factory=dict)
+    _actions_by_name: dict[str, Any] = field(default_factory=dict)
 
     def add_route(self, route: Any) -> None:
         self.routes.append(route)
@@ -28,7 +29,22 @@ class ApplicationRegistry:
         self.cli.append(command)
 
     def add_action(self, action: Any) -> None:
+        name = getattr(action, "name", None)
+        if name:
+            previous = self._actions_by_name.get(name)
+            if previous in self.actions:
+                self.actions.remove(previous)
+            self._actions_by_name[name] = action
         self.actions.append(action)
+
+    def get_action(self, name: str) -> Any | None:
+        if name in self._actions_by_name:
+            return self._actions_by_name[name]
+        for action in self.actions:
+            if getattr(action, "name", None) == name:
+                self._actions_by_name[name] = action
+                return action
+        return None
 
     def add_sql(self, item: Any) -> None:
         self.sql.append(item)

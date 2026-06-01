@@ -9,6 +9,9 @@ from .core import RuntimeMode, resolve_runtime_mode, app_runtime_mode, is_develo
 from .core import inspect_application
 from .core import GenerationRequest, GeneratorProvider, GeneratorRegistry
 from .core import ApplicationRegistry, get_application_registry
+from .core import ActionContext, ActionContract, ActionDispatcher, ActionResult, ApplicationContract
+from .core import ActionError, ActionExecutionError, ActionNotFound, ActionPermissionDenied, ActionValidationError
+from .core import action, dispatch_action, register_action
 from .response import BaseResponse, JsonResponse, HtmlResponse, normalize_response
 from .schema import Schema
 from .schema import ResponseBody
@@ -180,6 +183,19 @@ __all__ = (
     "inspect_application",
     "ApplicationRegistry",
     "get_application_registry",
+    "ActionContext",
+    "ActionContract",
+    "ActionDispatcher",
+    "ActionResult",
+    "ActionError",
+    "ActionExecutionError",
+    "ActionNotFound",
+    "ActionPermissionDenied",
+    "ActionValidationError",
+    "ApplicationContract",
+    "action",
+    "dispatch_action",
+    "register_action",
     "GenerationRequest",
     "GeneratorProvider",
     "GeneratorRegistry",

@@ -142,6 +142,57 @@ its schema, so every strategy can enforce or expose them consistently.
 
 Practical examples: [docs/value-objects-rules.md](docs/value-objects-rules.md).
 
+## Actions And Protocol Projections
+
+Actions are first-class application contracts in core. Declare an action once
+on a Muscles application instance, then let HTTP, CLI, MCP, JSON-RPC, SSE or
+other protocol projections call it through the same dispatcher:
+
+```python
+from muscles import ApplicationMeta, Context, ActionDispatcher
+
+
+class BookingApp(metaclass=ApplicationMeta):
+    context = Context(MyStrategy, {})
+
+
+app = BookingApp()
+
+
+@app.action(
+    name="bookings.create",
+    description="Create a booking request",
+    input_schema={
+        "type": "object",
+        "properties": {
+            "title": {"type": "string"},
+            "guest_count": {"type": "integer"},
+        },
+        "required": ["title"],
+    },
+    rules=["bookings.public_create"],
+    transports=["http", "cli", "mcp"],
+)
+def create_booking(payload, context):
+    return {"title": payload["title"], "transport": context.transport}
+
+
+result = ActionDispatcher(app).execute(
+    "bookings.create",
+    {"title": "Discovery call"},
+    transport="mcp",
+)
+```
+
+`inspect_application(app)` is the source of truth for discovery. Protocol
+packages should build tools, methods, routes or stream metadata from this
+contract and send execution back to `ActionDispatcher`. They should not keep a
+second validation, permissions or business model.
+
+The action registry is application-scoped. New protocol projections should avoid
+mutable module-level registries as their source of truth, because those leak
+state between app instances and tests.
+
 ## AI Workflow
 
 Official AI-oriented instructions:

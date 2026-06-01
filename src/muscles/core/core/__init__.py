@@ -15,6 +15,21 @@ from .runtime_mode import is_production
 from .inspection import inspect_application
 from .generator import GenerationRequest, GeneratorProvider, GeneratorRegistry
 from .registry import ApplicationRegistry, get_application_registry
+from .actions import (
+    ActionContext,
+    ActionContract,
+    ActionDispatcher,
+    ActionError,
+    ActionExecutionError,
+    ActionNotFound,
+    ActionPermissionDenied,
+    ActionResult,
+    ActionValidationError,
+    ApplicationContract,
+    action,
+    dispatch_action,
+    register_action,
+)
 
 
 __all__ = (
@@ -46,6 +61,19 @@ __all__ = (
     "inspect_application",
     "ApplicationRegistry",
     "get_application_registry",
+    "ActionContext",
+    "ActionContract",
+    "ActionDispatcher",
+    "ActionError",
+    "ActionExecutionError",
+    "ActionNotFound",
+    "ActionPermissionDenied",
+    "ActionResult",
+    "ActionValidationError",
+    "ApplicationContract",
+    "action",
+    "dispatch_action",
+    "register_action",
     "GenerationRequest",
     "GeneratorProvider",
     "GeneratorRegistry",
