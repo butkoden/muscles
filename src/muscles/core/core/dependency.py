@@ -111,11 +111,11 @@ def inject(*drugs, progressive=True):
     """
     def decorator(func):
         ds = DependencyStorage()
+        signature = inspect.signature(func)
+        params = signature.parameters
 
         @wraps(func)
         def wrapper(*args, **kwargs):
-            signature = inspect.signature(func)
-            params = signature.parameters
             if progressive is True:
                 for name, param in params.items():
                     if param.annotation is not inspect._empty \
@@ -126,7 +126,8 @@ def inject(*drugs, progressive=True):
             else:
                 for name, param in params.items():
                     if isinstance(param.default, Dependency):
-                        kwargs[name] = ds.get(param.default.dependency)
+                        if name not in kwargs:
+                            kwargs[name] = ds.get(param.default.dependency)
             return func(*args, **kwargs)
 
         wrapper.__name__ = func.__name__
