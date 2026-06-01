@@ -1,4 +1,5 @@
 from abc import abstractmethod
+import inspect
 from muscles.core.core import Dependency
 from muscles.core.core import inject
 from muscles.core.core import ApplicationMeta
@@ -263,3 +264,38 @@ def test_dependency_with_app():
 
     with Dependency(TestAppInterface, TestApp1) as di:
         assert di.test() == 'Active 1'
+
+
+def test_inject_signature_is_built_once(monkeypatch):
+    calls = {"count": 0}
+    original = inspect.signature
+
+    def _spy(func):
+        calls["count"] += 1
+        return original(func)
+
+    monkeypatch.setattr(inspect, "signature", _spy)
+
+    @inject(TestInterface)
+    def main(test: TestInterface):
+        return test.test()
+
+    assert calls["count"] == 1
+    main()
+    main()
+    assert calls["count"] == 1
+
+
+def test_non_progressive_does_not_override_explicit_kwarg():
+    Dependency(TestInterface, Test1Dependency)
+
+    @inject(progressive=False)
+    def main(test: TestInterface = Dependency(TestInterface)):
+        return test.test()
+
+    class Explicit(TestInterface):
+        def test(self):
+            return "Explicit"
+
+    result = main(test=Explicit())
+    assert result == "Explicit"
