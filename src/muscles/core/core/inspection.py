@@ -4,6 +4,7 @@ from typing import Any
 
 from .runtime_mode import app_runtime_mode
 from .registry import get_application_registry
+from .actions import ApplicationContract
 
 
 def _flatten_config(data: Any, prefix: str = "") -> dict[str, Any]:
@@ -53,6 +54,17 @@ def _collect_routes(app) -> list[dict[str, Any]]:
 
 def _collect_actions(app) -> list[dict[str, Any]]:
     registry = get_application_registry(app, create=False)
+    registered_actions = list(getattr(registry, "actions", []) or []) if registry is not None else []
+    if registered_actions:
+        actions = []
+        for action in registered_actions:
+            if hasattr(action, "to_contract"):
+                actions.append(action.to_contract())
+            elif isinstance(action, dict):
+                actions.append(action)
+            else:
+                actions.append({"name": getattr(action, "name", str(action))})
+        return actions
     handlers = list(getattr(registry, "routes", []) or [])
     if not handlers:
         handlers = getattr(app, "__muscles_routes__", []) or []
@@ -76,22 +88,23 @@ def inspect_application(app=None, include_sensitive: bool = False) -> dict[str, 
     values = flattened if include_sensitive else {}
 
     registry = get_application_registry(app, create=False) if app is not None else None
-    return {
-        "contract_version": "1",
-        "framework": "Muscles",
-        "app": app.__class__.__name__ if app is not None else None,
-        "runtime_mode": app_runtime_mode(app).value if app is not None else app_runtime_mode().value,
-        "strategies": _strategy_name(app) if app is not None else [],
-        "routes": _collect_routes(app) if app is not None else [],
-        "actions": _collect_actions(app) if app is not None else [],
-        "schemas": list(getattr(registry, "schemas", []) or []) if registry is not None else [],
-        "rules": list(getattr(registry, "rules", []) or []) if registry is not None else [],
-        "cli": list(getattr(registry, "cli", []) or []) if registry is not None else [],
-        "sql": list(getattr(registry, "sql", []) or []) if registry is not None else [],
-        "commands": [],
-        "warnings": [],
-        "config": {
+    contract = ApplicationContract(
+        app=app.__class__.__name__ if app is not None else None,
+        runtime_mode=app_runtime_mode(app).value if app is not None else app_runtime_mode().value,
+        strategies=_strategy_name(app) if app is not None else [],
+        routes=_collect_routes(app) if app is not None else [],
+        actions=_collect_actions(app) if app is not None else [],
+        schemas=list(getattr(registry, "schemas", []) or []) if registry is not None else [],
+        rules=list(getattr(registry, "rules", []) or []) if registry is not None else [],
+        cli=list(getattr(registry, "cli", []) or []) if registry is not None else [],
+        sql=list(getattr(registry, "sql", []) or []) if registry is not None else [],
+        config={
             "known_keys": sorted(flattened.keys()),
             "values": values,
         },
-    }
+    ).to_contract()
+    contract.update({
+        "commands": [],
+        "warnings": [],
+    })
+    return contract

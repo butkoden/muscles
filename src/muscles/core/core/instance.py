@@ -111,6 +111,15 @@ class ApplicationMeta(type):
             instance = super(ApplicationMeta, cls).__call__(*args, **kwargs)
             if not hasattr(instance, "__muscles_registry__"):
                 instance.__muscles_registry__ = ApplicationRegistry()
+            if not hasattr(instance, "action"):
+                from .actions import action as action_decorator
+                from .actions import dispatch_action
+
+                instance.action = lambda **options: action_decorator(instance, **options)
+                instance.dispatch_action = (
+                    lambda action_name, payload=None, transport=None, **options:
+                    dispatch_action(instance, action_name, payload, transport, **options)
+                )
             initializer = getattr(instance, 'initialize', None)
             if not hasattr(instance, '_initialized') and callable(initializer):
                 initializer(*args, **kwargs)
