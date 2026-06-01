@@ -1,6 +1,6 @@
 # Пример работы с зависимостями Dependency (патерн Dependency Injection / DI)
 
-MUSCLES содержит внутри себя возможность управления зависимостями через DI.
+Muscles содержит внутри себя возможность управления зависимостями через DI.
 
 Благодаря этому механизму вы можете подключать различные способы работы с базами данных, добавлять модели, прокидывать 
 объекты из одного пакета в другой и многое другое. Ниже рассмотрены основные способы взаимодействия с DI.
@@ -303,10 +303,10 @@ class TestApp3:
     def test(self):
         return "Active 3"
 
-class Muscular(metaclass=ApplicationMeta):
+class App(metaclass=ApplicationMeta):
     di = Dependency(TestAppInterface, TestApp1)
 
-m = Muscular()
+m = App()
 assert m.di.test() == 'Active 1'
 
 m.di = TestApp2

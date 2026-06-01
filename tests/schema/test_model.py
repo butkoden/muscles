@@ -39,7 +39,7 @@ class Util(UtilInterface):
             return "Active 1"
         
 
-class Muscular(metaclass=ApplicationMeta):
+class App(metaclass=ApplicationMeta):
     util = Dependency(UtilInterface, Util)
 
 
@@ -148,7 +148,6 @@ def test_request():
 
     assert r.content_type == 'application/x-www-form-urlencoded'
     assert r.model.columns["name"].dump() == column_name_User
-
 
 
 

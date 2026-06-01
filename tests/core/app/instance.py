@@ -16,7 +16,7 @@ class Strategy(BaseStrategy):
         return "Strategy Apply"
 
 
-class Muscular(metaclass=ApplicationMeta):
+class App(metaclass=ApplicationMeta):
     package_paths = []
     shutup = True
 
@@ -57,4 +57,4 @@ class Muscular(metaclass=ApplicationMeta):
         return self.context.execute()
 
 
-muscular = Muscular()
+app = App()

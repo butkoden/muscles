@@ -29,7 +29,7 @@ class WatchdogHandler(WatchdogHandlerInterface):
         return uwsgi.reload()
 
 
-class Muscular(metaclass=ApplicationMeta):
+class App(metaclass=ApplicationMeta):
     
     # ...
 

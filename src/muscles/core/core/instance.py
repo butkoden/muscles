@@ -56,15 +56,15 @@ Dependency(EventsStorageInterface, EventsStorage)
 class Application:
     """
     В некоторых случаях бывает сложно обратиться напрямую к инстансу своей программы, например объекту
-    `m = Muscular()`. Для подобных целей существует класс Application, который позволяет из любого места любого
-    пакета получить не на прямую объект `Muscular`.
+    `m = App()`. Для подобных целей существует класс Application, который позволяет из любого места любого
+    пакета получить не на прямую объект приложения Muscles.
 
     ### Пример 1
     ```python
     from muscles import Application
 
     m = Application()
-    type(m) # > <class Muscular()>
+    type(m) # > <class App()>
     ```
     """
 
