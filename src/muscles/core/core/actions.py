@@ -209,10 +209,18 @@ class ActionDispatcher:
             transport=transport,
             metadata=dict(metadata or {}),
         )
+        self._check_transport(action, transport)
         self._validate(action, payload)
         self._check_rules(action, payload, context)
         try:
             value = self._call_handler(action, payload, context)
+            if inspect.isawaitable(value):
+                if hasattr(value, "close"):
+                    value.close()
+                raise ActionExecutionError(
+                    action.name,
+                    "Async action handlers are not supported by ActionDispatcher.execute; use an async dispatcher.",
+                )
         except ActionError:
             raise
         except PermissionError as exc:
@@ -225,6 +233,16 @@ class ActionDispatcher:
             transport=transport,
             is_stream=_is_stream_result(value),
         )
+
+    @staticmethod
+    def _check_transport(action: ActionContract, transport: str | None) -> None:
+        if transport is None or not action.transports:
+            return
+        if transport not in action.transports:
+            raise ActionPermissionDenied(
+                action.name,
+                f"Transport '{transport}' is not allowed for action: {action.name}",
+            )
 
     @staticmethod
     def _validate(action: ActionContract, payload: dict[str, Any]) -> None:

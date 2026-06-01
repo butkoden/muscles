@@ -4,6 +4,7 @@ from muscles.core import (
     ActionContext,
     ActionContract,
     ActionDispatcher,
+    ActionExecutionError,
     ActionNotFound,
     ActionPermissionDenied,
     ActionValidationError,
@@ -190,6 +191,57 @@ def test_action_dispatcher_calls_handler_with_action_context():
     assert result.transport == "http"
     assert result.value == {"id": 1, "title": "HTTP"}
     assert calls == [({"title": "HTTP"}, "bookings.dispatch", "http")]
+
+
+def test_action_dispatcher_denies_transport_not_declared_in_contract():
+    app = _AppA()
+
+    register_action(
+        app,
+        name="bookings.http_only",
+        input_schema=BOOKING_INPUT_SCHEMA,
+        transports=["http"],
+        handler=lambda payload, context: {"transport": context.transport},
+    )
+
+    with pytest.raises(ActionPermissionDenied) as exc_info:
+        ActionDispatcher(app).execute("bookings.http_only", {"title": "Call"}, transport="mcp")
+
+    assert "mcp" in exc_info.value.message
+
+
+def test_action_dispatcher_allows_transport_when_contract_is_open():
+    app = _AppA()
+
+    register_action(
+        app,
+        name="bookings.open_transport",
+        input_schema=BOOKING_INPUT_SCHEMA,
+        handler=lambda payload, context: {"transport": context.transport},
+    )
+
+    result = ActionDispatcher(app).execute("bookings.open_transport", {"title": "Call"}, transport="mcp")
+
+    assert result.value == {"transport": "mcp"}
+
+
+def test_action_dispatcher_rejects_async_handler_until_async_execution_exists():
+    app = _AppA()
+
+    async def create_booking(payload, context):
+        return {"title": payload["title"]}
+
+    register_action(
+        app,
+        name="bookings.async",
+        input_schema=BOOKING_INPUT_SCHEMA,
+        handler=create_booking,
+    )
+
+    with pytest.raises(ActionExecutionError) as exc_info:
+        ActionDispatcher(app).execute("bookings.async", {"title": "Call"}, transport="mcp")
+
+    assert "Async action handlers are not supported" in exc_info.value.message
 
 
 def test_action_dispatcher_marks_iterable_handler_result_as_stream():
