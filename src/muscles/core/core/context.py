@@ -208,9 +208,11 @@ class Context:
             strategy = strategy_ref()
         else:
             strategy = strategy_ref
-        kwargs.update(self._params)
-        kwargs.update({'container': self._owner})
-        result = strategy.execute(*args, error_handler=self._error_handler, **kwargs)
+        execute_kwargs = dict(kwargs)
+        if self._params:
+            execute_kwargs.update(self._params)
+        execute_kwargs['container'] = self._owner
+        result = strategy.execute(*args, error_handler=self._error_handler, **execute_kwargs)
         '''Запускаем обработчики after_start'''
         for func in self.after_start_function_list:
             func(self._owner, result)
