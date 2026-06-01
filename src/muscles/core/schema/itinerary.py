@@ -1,4 +1,5 @@
 import inspect
+import logging
 import re
 import os
 import traceback
@@ -22,6 +23,18 @@ HTTP_METHOD_PATCH = 'patch'
 HTTP_METHOD_OPTION = 'options'
 HTTP_METHOD_TRACE = 'trace'
 HTTP_METHOD_CONNECT = 'connect'
+
+
+def _is_route_param(chunk: str) -> bool:
+    return bool(chunk) and chunk[0] == '{' and chunk[-1] == '}'
+
+
+def _parse_route_chunk(chunk: str):
+    if _is_route_param(chunk):
+        body = chunk[1:-1]
+        name, sep, rule_name = body.partition(':')
+        return f"{{{name}:{rule_name or 'var'}}}", name, (rule_name or "var"), True
+    return chunk, False, "default", False
 
 class Itinerary:
     """
@@ -147,17 +160,15 @@ class Itinerary:
         cached = self._match_cache.get(url)
         if cached is not None:
             return cached or None
-        chunks = url.split('/')
-        if len(chunks) > 0 and chunks[0] == '':
-            chunks = chunks[1:]
-        for route in self._match(self.node, chunks):
+        chunks = [chunk for chunk in url.split('/') if chunk]
+        for route in self._match(self.node, chunks, 0):
             if route.key and route.key in self._routes_by_key:
                 self._match_cache[url] = route
                 return route
         self._match_cache[url] = False
         return None
 
-    def _match(self, route, chunks, paths=None, n=0):
+    def _match(self, route, chunks, index=0):
         """
         Поиск подходящих узлов
 
@@ -167,16 +178,16 @@ class Itinerary:
         :param n:
         :return:
         """
-        if paths is None:
-            paths = []
-        if len(chunks) == 0:
+        if index >= len(chunks):
             return
+        chunk = chunks[index]
+        last_index = len(chunks) - 1
         for node in route.childrens:
-            if node.is_match(chunks[:1][0]):
-                if len(chunks[1:]) == 0:
+            if node.is_match(chunk):
+                if index == last_index:
                     yield node
                 else:
-                    yield from self._match(node, chunks[1:], [node] + paths, n + 1)
+                    yield from self._match(node, chunks, index + 1)
 
     def match_with_params(self, url):
         """
@@ -317,14 +328,8 @@ class Itinerary:
             _chunks.append(chunk)
             if chunk == '':
                 continue
-            m = re.search(r"\{([^\}]+)\}", chunk)
-            if m:
-                m = m.group(1).split(':')
-                dictionary_key = m[0]
-                rule = m[1] if len(m) > 1 else 'var'
-            else:
-                dictionary_key = False
-                rule = 'default'
+            normalized_chunk, dictionary_key, rule_name, _ = _parse_route_chunk(chunk)
+            rule = rule_name
             for _rule in self.rules:
                 if _rule.name == rule:
                     rule = _rule
@@ -345,13 +350,15 @@ class Itinerary:
                         "route": route,
                         'method': method,
                         'content_type': content_type,
+                        'method_upper': (method or '*').upper() if method else '*',
+                        'content_type_lower': (content_type or '').lower() if content_type else '',
                         'redirect': redirect,
                         'handler': handler,
                         'instance': self,
                     }
                     self.nodes_map.append(route_record)
                     self._routes_by_key[key].append(route_record)
-            node = node.instance(chunk, full_route=full_route, key=key, dictionary_key=dictionary_key, rule=rule)
+            node = node.instance(normalized_chunk, full_route=full_route, key=key, dictionary_key=dictionary_key, rule=rule)
         handler.node = node
         handler.full_route = full_route
 
@@ -483,16 +490,17 @@ class Itinerary:
             func.route = route or '/'
             if model:
                 func.model = model
+            func._requires_auth = bool(getattr(func, "security", []))
+            func._allowed_kwargs = frozenset(inspect.signature(func).parameters.keys())
 
             @wraps(func)
             def wrapper(*args, **kwargs):
                 # validate(instance={"name": "Eggs", "price": 34.99}, schema=schema)
-                if "request" in kwargs and len(func.security) > 0 and isinstance(kwargs["request"].user, GuestUser):
+                requires_auth = func._requires_auth or bool(getattr(wrapper, "security", getattr(func, "security", [])))
+                if "request" in kwargs and requires_auth and isinstance(kwargs["request"].user, GuestUser):
                     raise AccessDeniedException(reason="Access Denied")
                 else:
-                    signature = inspect.signature(func)
-                    params = signature.parameters
-                    unreliable = list(set(kwargs.keys()) - set(params.keys()))
+                    unreliable = [key for key in kwargs.keys() if key not in func._allowed_kwargs]
                     if len(unreliable) > 0:
                         raise ApplicationException(status=500,
                                                    reason="The `%s` handler has no mandatory `%s` arguments" % (
@@ -504,6 +512,7 @@ class Itinerary:
 
             wrapper.__name__ = func.__name__
             wrapper.__doc__ = func.__doc__
+            wrapper.security = getattr(func, "security", [])
             return wrapper
 
         return decorator
@@ -561,16 +570,18 @@ class Itinerary:
         node, dictionary = self.match_with_params(request.path)
         if node is None:
             return None, ()
+        request_method = request.method.upper()
+        request_content_type = request.content_type.lower()
 
         def condition(route):
             """condition here"""
             res = True
             if res and route['key'] and route['key'] != node.key:
                 res = False
-            if res and route['method'] and route['method'] != '*' and route['method'].upper() != request.method.upper():
+            if res and route['method'] and route['method'] != '*' and route['method_upper'] != request_method:
                 res = False
             if res and route['content_type'] and route['content_type'] != '*/*' and \
-                    route['content_type'].lower() != request.content_type.lower():
+                    route['content_type_lower'] != request_content_type:
                 res = False
             return res
 
@@ -598,13 +609,20 @@ class Itinerary:
 
         :return:
         """
-        map = self.nodes_map
+        logger = getattr(self, "logger", None) or logging.getLogger("muscles.router")
+        route_map = self.nodes_map
 
         def tree(node, i):
             for r in node.childrens:
                 i = i + 1
-                meth = [_m['method'] or '*' for _m in map if r.key == _m['key']]
-                print('. ' * i, '/%s' % r.route, ' ' * 3, '[%s key:%s]' % (','.join(meth).upper(), r.key))
+                meth = [_m['method'] or '*' for _m in route_map if r.key == _m['key']]
+                logger.debug(
+                    "%s /%s    [%s key:%s]",
+                    '. ' * i,
+                    r.route,
+                    ','.join(meth).upper(),
+                    r.key,
+                )
                 tree(r, i)
                 i = i - 1
 
@@ -634,16 +652,13 @@ class Node(ABC):
         :param parent: Родитель узла
         """
         self.full_route = full_route
-        m = re.search(r"\{([^\}]+)\}", chunk_route)
-        if m:
-            m = m.group(1).split(':')
-            chunk_route = '{%s:%s}' % (m[0], m[1] if len(m) > 1 else 'var')
+        chunk_route, _, _, has_param = _parse_route_chunk(chunk_route)
         self.key = key.lower() if key and key is not None else None
         self.route = chunk_route.lower() if chunk_route and chunk_route is not None else None
         self.rule = rule
         self.full_route = full_route.lower() if full_route and full_route is not None else None
         self.parent = parent
-        self.weight = 0 if not m else 100
+        self.weight = 100 if has_param else 0
         self.dictionary_key = dictionary_key.lower() if dictionary_key and dictionary_key is not None else None
         self._childrens = []
         self._children_by_route = {}
@@ -671,10 +686,7 @@ class Node(ABC):
         :param rule: Правило узла
         :return: Node
         """
-        m = re.search(r"\{([^\}]+)\}", chunk_route)
-        if m:
-            m = m.group(1).split(':')
-            chunk_route = '{%s:%s}' % (m[0], m[1] if len(m) > 1 else 'var')
+        chunk_route, _, _, _ = _parse_route_chunk(chunk_route)
         node = self.get_children_node(chunk_route)
         if node:
             if node.key is None:
