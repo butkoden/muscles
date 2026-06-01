@@ -7,6 +7,7 @@ from .core import storageMapper, Storage, StorageStrategy, StorageMapper
 from .core import Application, ApplicationMeta, PackageMeta
 from .core import RuntimeMode, resolve_runtime_mode, app_runtime_mode, is_development, is_test, is_production
 from .core import inspect_application
+from .core import GenerationRequest, GeneratorProvider, GeneratorRegistry
 from .schema import Schema
 from .schema import ResponseBody
 from .schema import JsonResponseBody
@@ -175,6 +176,9 @@ __all__ = (
     "is_test",
     "is_production",
     "inspect_application",
+    "GenerationRequest",
+    "GeneratorProvider",
+    "GeneratorRegistry",
     "Schema",
     "ResponseBody",
     "JsonResponseBody",

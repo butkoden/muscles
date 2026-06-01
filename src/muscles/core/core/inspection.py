@@ -47,6 +47,21 @@ def _collect_routes(app) -> list[dict[str, Any]]:
     return routes
 
 
+def _collect_actions(app) -> list[dict[str, Any]]:
+    handlers = getattr(app, "__muscles_routes__", []) or []
+    actions: list[dict[str, Any]] = []
+    for handler in handlers:
+        for action in getattr(handler, "actions", []) or []:
+            actions.append(
+                {
+                    "route": getattr(getattr(handler, "node", None), "full_route", None),
+                    "action": action,
+                    "handler": f"{getattr(handler, '__module__', '')}.{getattr(handler, '__name__', '')}".strip("."),
+                }
+            )
+    return actions
+
+
 def inspect_application(app=None, include_sensitive: bool = False) -> dict[str, Any]:
     config = getattr(app, "config", None) if app is not None else None
     config_object = getattr(config, "_object", {}) if config is not None else {}
@@ -60,6 +75,11 @@ def inspect_application(app=None, include_sensitive: bool = False) -> dict[str, 
         "runtime_mode": app_runtime_mode(app).value if app is not None else app_runtime_mode().value,
         "strategies": _strategy_name(app) if app is not None else [],
         "routes": _collect_routes(app) if app is not None else [],
+        "actions": _collect_actions(app) if app is not None else [],
+        "schemas": [],
+        "rules": [],
+        "cli": [],
+        "sql": [],
         "commands": [],
         "warnings": [],
         "config": {
