@@ -11,6 +11,7 @@ from .core import GenerationRequest, GeneratorProvider, GeneratorRegistry
 from .core import ApplicationRegistry, get_application_registry
 from .core import ActionContext, ActionContract, ActionDispatcher, ActionResult, ApplicationContract
 from .core import ActionError, ActionExecutionError, ActionNotFound, ActionPermissionDenied, ActionValidationError
+from .core import StreamEvent, StreamResult, coerce_stream_event, stream_events
 from .core import action, dispatch_action, register_action
 from .response import BaseResponse, JsonResponse, HtmlResponse, normalize_response
 from .schema import Schema
@@ -193,6 +194,10 @@ __all__ = (
     "ActionPermissionDenied",
     "ActionValidationError",
     "ApplicationContract",
+    "StreamEvent",
+    "StreamResult",
+    "coerce_stream_event",
+    "stream_events",
     "action",
     "dispatch_action",
     "register_action",
