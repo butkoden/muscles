@@ -12,12 +12,80 @@ of implementing their own framework model.
 - `muscles-asgi` - ASGI runtime with the same routing and REST API model.
 - `muscles-cli` - console command strategy built on the same route/group idea.
 
+## Installation
+
+Muscles ecosystem currently uses GitHub source installs as the canonical method.
+PyPI publishing is a target state, not yet the default distribution channel.
+
+Installation matrix:
+
+- core only: `pip install git+https://github.com/butkoden/muscles.git`
+- ASGI runtime: `pip install git+https://github.com/butkoden/muscles-asgi.git`
+- WSGI runtime: `pip install git+https://github.com/butkoden/muscles-wsgi.git`
+- CLI tooling: `pip install git+https://github.com/butkoden/muscles-cli.git`
+- full/dev (source checkouts): clone all repositories and use `PYTHONPATH` with sibling `src` paths.
+
+More detail: [docs/installation.md](docs/installation.md).
+
 ## Naming
 
 Use `Muscles` as the public framework name. Keep `muscles` for the Python
 package/import name and `muscles-*` for official package identifiers.
 
 More detail: [docs/naming.md](docs/naming.md).
+
+## Positioning
+
+Muscles is a framework for a **single application model** that can be projected
+into multiple runtimes (WSGI, ASGI, CLI). It is not optimized for the shortest
+"one endpoint in five minutes" path. It is optimized for consistency: the same
+schemas, routing tree, lifecycle hooks and rules metadata stay reusable across
+transports.
+
+### When To Use Muscles
+
+- you need Web/API/CLI to share one domain model and metadata;
+- you want routing, schemas and rules to be declared once and reused;
+- you want AI-assisted changes to follow a stable project structure.
+
+### When Not To Use Muscles
+
+- you only need a tiny HTTP service with no shared model beyond one runtime;
+- your team prefers runtime-specific framework patterns per interface;
+- you need mature batteries-included admin/ORM stack out of the box.
+
+### FastAPI Relation
+
+FastAPI is a strong choice for API-first delivery speed. Muscles targets a
+different trade-off: one reusable model for API, pages and CLI workflows. These
+tools can coexist in a portfolio; Muscles should not claim production maturity
+or performance superiority without benchmark evidence.
+
+More detail: [docs/positioning.md](docs/positioning.md).
+Golden tutorial reference (planned): [Issue #16](https://github.com/butkoden/muscles/issues/16).
+
+## Golden Path Structure
+
+Use the official Muscles project structure as the default style for people and
+AI assistants:
+
+```text
+app/
+  application.py
+  config.py
+  domain/
+  schemas/
+  web/
+  api/
+  cli/
+  rules/
+  templates/
+  static/
+tests/
+```
+
+More detail: [docs/golden-path.md](docs/golden-path.md).
+Tutorial: [docs/golden-tutorial.md](docs/golden-tutorial.md).
 
 ## Application Shape
 
@@ -71,6 +139,28 @@ Decorators such as `@rules` are intended to attach access control and metadata
 to the same objects that routing uses. The important design rule is that a route,
 API action or command should carry its permissions and properties together with
 its schema, so every strategy can enforce or expose them consistently.
+
+Practical examples: [docs/value-objects-rules.md](docs/value-objects-rules.md).
+
+## AI Workflow
+
+Official AI-oriented instructions:
+
+- [docs/ai/AGENTS.md](docs/ai/AGENTS.md)
+- [docs/ai/cursor-rules.md](docs/ai/cursor-rules.md)
+- [docs/ai/copilot-instructions.md](docs/ai/copilot-instructions.md)
+
+## Production Deploy
+
+Umbrella guide: [docs/production-deploy.md](docs/production-deploy.md).
+
+## Benchmarks
+
+Benchmark docs: [docs/benchmarks.md](docs/benchmarks.md).
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Development
 

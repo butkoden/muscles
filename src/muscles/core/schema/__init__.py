@@ -13,6 +13,7 @@ from .security import *
 from .itinerary import *
 from .user import *
 from .value_object import *
+from .pydantic_bridge import *
 
 __all__ = (
     "Itinerary",
@@ -89,4 +90,8 @@ __all__ = (
     "SystemUser",
     "GuestUser",
     "User",
+    "pydantic_available",
+    "to_json_schema",
+    "to_pydantic_model",
+    "from_pydantic_instance",
 )
