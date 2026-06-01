@@ -9,6 +9,11 @@ from collections import ChainMap
 basedir = os.path.abspath(os.path.join(os.path.dirname(__file__), ''))
 
 
+def _safe_load_yaml(path: str):
+    with open(path, "r", encoding="utf-8") as stream:
+        return yaml.safe_load(stream)
+
+
 class ConfigStorage(object):
     """
     Класс хранилища созданный на основе патерна одиночка. Каждый раз при создании объекта мы получаем одиин и
@@ -130,12 +135,12 @@ def include_constructor(loader, node):
     if os.path.isdir(os.path.join(configStorage.basedir, file)):
         values = []
         for entry in glob.glob('/'.join([os.path.join(configStorage.basedir, file), '*.yaml'])):
-            values.append(yaml.load(open(entry), Loader=yaml.FullLoader))
+            values.append(_safe_load_yaml(entry))
         return values
     else:
         extension = ''.join(pathlib.Path(os.path.join(configStorage.basedir, file)).suffixes)
         if extension == '.yaml':
-            return yaml.load(open(os.path.join(configStorage.basedir, file)), Loader=yaml.FullLoader)
+            return _safe_load_yaml(os.path.join(configStorage.basedir, file))
         else:
             return open(os.path.join(configStorage.basedir, file)).read()
 
@@ -153,10 +158,10 @@ def include_dir_constructor(loader, node):
     if os.path.isdir(os.path.join(configStorage.basedir, file)):
         values = {}
         for entry in glob.glob('/'.join([os.path.join(configStorage.basedir, file), '*.yaml'])):
-            values.update(yaml.load(open(entry), Loader=yaml.FullLoader))
+            values.update(_safe_load_yaml(entry))
         return values
     else:
-        return yaml.load(open(os.path.join(configStorage.basedir, file)), Loader=yaml.FullLoader)
+        return _safe_load_yaml(os.path.join(configStorage.basedir, file))
 
 
 def include_list_constructor(loader, node):
@@ -172,10 +177,10 @@ def include_list_constructor(loader, node):
     if os.path.isdir(os.path.join(configStorage.basedir, file)):
         values = []
         for entry in glob.glob('/'.join([os.path.join(configStorage.basedir, file), '*.yaml'])):
-            values = values + yaml.load(open(entry), Loader=yaml.FullLoader)
+            values = values + _safe_load_yaml(entry)
         return values
     else:
-        return yaml.load(open(os.path.join(configStorage.basedir, file)), Loader=yaml.FullLoader)
+        return _safe_load_yaml(os.path.join(configStorage.basedir, file))
 
 
 def secret_constructor(loader, node):
@@ -195,7 +200,7 @@ def secret_constructor(loader, node):
         or os.environ.get('CONFIG_SECRET_FILE')
         or './config/secret.yaml'
     )
-    values = yaml.load(open(os.path.join(basedir, secret_file)), Loader=yaml.FullLoader)
+    values = _safe_load_yaml(os.path.join(basedir, secret_file))
     return values.get(tag, None)
 
 
@@ -212,16 +217,16 @@ def permission_constructor(loader, node):
     return list
 
 
-yaml.add_constructor(u'!basedir', basedir_constructor)
-yaml.add_constructor(u'!basepath', basepath_constructor)
-yaml.add_constructor(u'!path', path_constructor)
-yaml.add_constructor(u'!abspath', abspath_constructor)
-yaml.add_constructor(u'!environ', environ_constructor)
-yaml.add_constructor(u'!include', include_constructor)
-yaml.add_constructor(u'!include_list', include_list_constructor)
-yaml.add_constructor(u'!include_dir', include_dir_constructor)
-yaml.add_constructor(u'!secret', secret_constructor)
-yaml.add_constructor(u'!permission', permission_constructor)
+yaml.SafeLoader.add_constructor(u'!basedir', basedir_constructor)
+yaml.SafeLoader.add_constructor(u'!basepath', basepath_constructor)
+yaml.SafeLoader.add_constructor(u'!path', path_constructor)
+yaml.SafeLoader.add_constructor(u'!abspath', abspath_constructor)
+yaml.SafeLoader.add_constructor(u'!environ', environ_constructor)
+yaml.SafeLoader.add_constructor(u'!include', include_constructor)
+yaml.SafeLoader.add_constructor(u'!include_list', include_list_constructor)
+yaml.SafeLoader.add_constructor(u'!include_dir', include_dir_constructor)
+yaml.SafeLoader.add_constructor(u'!secret', secret_constructor)
+yaml.SafeLoader.add_constructor(u'!permission', permission_constructor)
 
 
 class ConfiguratorException(Exception):
@@ -299,8 +304,8 @@ class Configurator:
                     # print(self._object)
                     # print(configStorage.basedir)
                     # print(os.path.join(configStorage.basedir, file))
-                    # self._object = yaml.load(open(os.path.join(configStorage.basedir, file)), Loader=yaml.Loader)
-                    self._object = yaml.load(open(os.path.join(basedir, file)), Loader=yaml.Loader)
+                    # self._object = _safe_load_yaml(os.path.join(configStorage.basedir, file))
+                    self._object = _safe_load_yaml(os.path.join(basedir, file))
                 except TypeError as e:
                     raise e
                 for key in self._object.get('params', {}):
