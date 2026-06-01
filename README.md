@@ -12,6 +12,13 @@ of implementing their own framework model.
 - `muscles-asgi` - ASGI runtime with the same routing and REST API model.
 - `muscles-cli` - console command strategy built on the same route/group idea.
 
+## Naming
+
+Use `Muscles` as the public framework name. Keep `muscles` for the Python
+package/import name and `muscles-*` for official package identifiers.
+
+More detail: [docs/naming.md](docs/naming.md).
+
 ## Application Shape
 
 An application is usually a class with `ApplicationMeta`, a `Configurator` and a

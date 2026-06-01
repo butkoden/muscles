@@ -1,4 +1,4 @@
-from .app.instance import Muscular
+from .app.instance import App
 from .app.instance import Strategy
 from muscles.core.core import BaseStrategy
 
@@ -43,10 +43,10 @@ def test_context0():
     Проверяем работоспособность схемы
     :return:
     """
-    muscular = Muscular()
-    muscular.context.strategy = Strategy
-    app = muscular()
-    assert app == 'Strategy Apply'
+    instance = App()
+    instance.context.strategy = Strategy
+    result = instance()
+    assert result == 'Strategy Apply'
 
 
 def test_context2_with_before():
@@ -54,14 +54,14 @@ def test_context2_with_before():
     Проверяем работоспособность схемы
     :return:
     """
-    muscular = Muscular()
-    muscular.context.strategy = Strategy1
-    app = muscular()
-    assert app == 'Strategy Apply 1'
+    instance = App()
+    instance.context.strategy = Strategy1
+    result = instance()
+    assert result == 'Strategy Apply 1'
 
-    muscular.context.strategy = StrategyBefore
-    app = muscular()
-    assert app == 'Strategy ApplyAdd Before String'
+    instance.context.strategy = StrategyBefore
+    result = instance()
+    assert result == 'Strategy ApplyAdd Before String'
 
 
 def test_context3_with_context():
@@ -69,22 +69,22 @@ def test_context3_with_context():
     Проверяем работоспособность схемы
     :return:
     """
-    muscular = Muscular()
-    muscular.context.strategy = StrategyBefore
-    app = muscular()
-    assert app == 'Strategy ApplyAdd Before String'
+    instance = App()
+    instance.context.strategy = StrategyBefore
+    result = instance()
+    assert result == 'Strategy ApplyAdd Before String'
 
-    muscular = Muscular()
-    muscular.context.strategy = StrategyConext
-    app = muscular()
-    assert app == 'Strategy ApplyAdd Context String'
+    instance = App()
+    instance.context.strategy = StrategyConext
+    result = instance()
+    assert result == 'Strategy ApplyAdd Context String'
 
-    muscular = Muscular()
-    muscular.context.strategy = StrategyAfter
-    app = muscular()
-    assert app == 'Strategy ApplyAdd After String'
+    instance = App()
+    instance.context.strategy = StrategyAfter
+    result = instance()
+    assert result == 'Strategy ApplyAdd After String'
 
-    muscular = Muscular()
-    muscular.context.strategy = StrategyAllTrigger
-    app = muscular()
-    assert app == 'Strategy ApplyAdd Before StringAdd Context StringAdd After String'
+    instance = App()
+    instance.context.strategy = StrategyAllTrigger
+    result = instance()
+    assert result == 'Strategy ApplyAdd Before StringAdd Context StringAdd After String'

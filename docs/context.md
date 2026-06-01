@@ -13,7 +13,7 @@ class WsgiStrategy(BaseStrategy):
         return "WSGI" # Нам важен принцип, поэтому просто возвращаем значение
 
 
-class Muscular(metaclass=ApplicationMeta):
+class App(metaclass=ApplicationMeta):
     
     # Тут мы определяем наш контекст тратегии, в качестве опций передаем пустой словарь
     context = Context(WsgiStrategy, {})
@@ -77,7 +77,7 @@ context = Context(
 Также можно положить логгер в класс приложения:
 
 ```python
-class Muscular(metaclass=ApplicationMeta):
+class App(metaclass=ApplicationMeta):
     logger = logging.getLogger("butko.site")
 ```
 

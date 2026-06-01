@@ -249,10 +249,10 @@ def test_dependency_with_app():
         def test(self):
             return "Active 3"
 
-    class Muscular(metaclass=ApplicationMeta):
+    class App(metaclass=ApplicationMeta):
         di = Dependency(TestAppInterface, TestApp1)
 
-    m = Muscular()
+    m = App()
     assert m.di.test() == 'Active 1'
 
     m.di = TestApp2
@@ -263,4 +263,3 @@ def test_dependency_with_app():
 
     with Dependency(TestAppInterface, TestApp1) as di:
         assert di.test() == 'Active 1'
-
