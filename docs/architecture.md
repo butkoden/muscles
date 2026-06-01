@@ -4,6 +4,10 @@ Muscles is built around a small set of reusable primitives. A runtime strategy
 decides how to receive input and return output, but the shape of the application
 is shared.
 
+Positioning summary: Muscles is aimed at a unified application model across
+interfaces, not at shortest API-only bootstrap. See [positioning.md](positioning.md).
+Default project structure is fixed in [golden-path.md](golden-path.md).
+
 ## Base Application
 
 `ApplicationMeta` prepares application classes and helper methods. An app then
