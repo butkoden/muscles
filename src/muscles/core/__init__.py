@@ -8,6 +8,8 @@ from .core import Application, ApplicationMeta, PackageMeta
 from .core import RuntimeMode, resolve_runtime_mode, app_runtime_mode, is_development, is_test, is_production
 from .core import inspect_application
 from .core import GenerationRequest, GeneratorProvider, GeneratorRegistry
+from .core import ApplicationRegistry, get_application_registry
+from .response import BaseResponse, JsonResponse, HtmlResponse, normalize_response
 from .schema import Schema
 from .schema import ResponseBody
 from .schema import JsonResponseBody
@@ -176,9 +178,15 @@ __all__ = (
     "is_test",
     "is_production",
     "inspect_application",
+    "ApplicationRegistry",
+    "get_application_registry",
     "GenerationRequest",
     "GeneratorProvider",
     "GeneratorRegistry",
+    "BaseResponse",
+    "JsonResponse",
+    "HtmlResponse",
+    "normalize_response",
     "Schema",
     "ResponseBody",
     "JsonResponseBody",
