@@ -201,7 +201,7 @@ def normalize_schema(schema: Any) -> dict[str, Any]:
     return {"type": "object", "properties": {}}
 
 
-def register_action(
+def _register_action(
     app,
     *,
     name: str,
@@ -233,9 +233,22 @@ def register_action(
     return contract
 
 
+def register_action(*args, **kwargs):
+    """
+    INTERNAL ONLY.
+
+    This symbol is kept for temporary compatibility with existing internal calls and
+    must not be used from user code outside muscles core.
+    New code should avoid this API and register actions via @app.action decorator.
+    """
+    raise RuntimeError(
+        "register_action is private and must not be used outside Muscles core internals."
+    )
+
+
 def action(app, **options):
     def decorator(func):
-        register_action(app, handler=func, **options)
+        _register_action(app, handler=func, **options)
         return func
 
     return decorator
