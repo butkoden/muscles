@@ -99,7 +99,7 @@ from muscles.wsgi import WsgiStrategy
 
 class App(metaclass=ApplicationMeta):
     config = Configurator(obj={"main": {"DEBUG": True}})
-    context = Context(WsgiStrategy, {})
+    context = Context(WsgiStrategy, transport="wsgi", params={})
 
     def run(self, *args):
         return self.context.execute(*args, shutup=True)
@@ -153,7 +153,7 @@ from muscles import ApplicationMeta, Context, ActionDispatcher
 
 
 class BookingApp(metaclass=ApplicationMeta):
-    context = Context(MyStrategy, {})
+    context = Context(MyStrategy, transport="app", params={})
 
 
 app = BookingApp()
@@ -192,6 +192,29 @@ second validation, permissions or business model.
 The action registry is application-scoped. New protocol projections should avoid
 mutable module-level registries as their source of truth, because those leak
 state between app instances and tests.
+
+### Stream Results
+
+English:
+
+Streaming actions return `StreamResult(source=...)` with business
+`StreamEvent(type="progress" | "log" | "result" | "error", data=...)` items.
+The core contract is protocol-neutral: SSE heartbeat, MCP envelopes, JSON-RPC
+notifications and CLI progress lines are transport projections over the same
+events. Transports should preserve backpressure with bounded delivery and call
+`close()` on disconnect when the source supports it. Long-blocking sources must
+cooperate by unblocking the active `next()` call after `close()`.
+
+Русский:
+
+Streaming actions возвращают `StreamResult(source=...)` с business events
+`StreamEvent(type="progress" | "log" | "result" | "error", data=...)`.
+Core contract не зависит от протокола: SSE heartbeat, MCP envelopes,
+JSON-RPC notifications и CLI progress lines являются transport-проекциями одних
+и тех же событий. Transport должен сохранять backpressure через bounded delivery
+и вызывать `close()` при disconnect, если source это поддерживает. Долгие
+blocking sources должны быть cooperative: `close()` должен разблокировать
+активный `next()`.
 
 User docs:
 

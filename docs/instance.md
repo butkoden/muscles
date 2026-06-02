@@ -98,7 +98,7 @@ class App(metaclass=ApplicationMeta):
     # Подключаем контекст @SEE context.md
     # Для запуска необходимо реализовать класс Strategy, заложив в него нужные функции
     # Пример использования и реализаци страгии смотри в разделе cli и wsgi
-    context = Context(Strategy, {})
+    context = Context(Strategy, transport="app", params={})
 
     def __init__(self):
         """ В конструкторе объекта подключаем необходимые модули и файлы из конфигурационного файла. """

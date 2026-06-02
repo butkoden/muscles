@@ -64,19 +64,66 @@ class ActionResult:
         }
 
 
+STREAM_EVENT_TYPES = {"progress", "log", "result", "error"}
+
+
+@dataclass(frozen=True)
+class StreamEvent:
+    type: str
+    data: Any
+    event_id: str | None = None
+    metadata: dict[str, Any] = field(default_factory=dict)
+
+    def __post_init__(self):
+        if self.type not in STREAM_EVENT_TYPES:
+            raise ValueError(f"Unknown stream event type: {self.type}")
+
+    def to_contract(self) -> dict[str, Any]:
+        return {
+            "type": self.type,
+            "data": self.data,
+            "event_id": self.event_id,
+            "metadata": dict(self.metadata),
+        }
+
+
+@dataclass
+class StreamResult:
+    source: Iterable[StreamEvent | dict[str, Any]]
+    close: Callable[[], None] | None = None
+    metadata: dict[str, Any] = field(default_factory=dict)
+
+    def __iter__(self):
+        return iter(self.source)
+
+    def close_source(self) -> None:
+        if self.close is not None:
+            self.close()
+            return
+        close = getattr(self.source, "close", None)
+        if callable(close):
+            close()
+
+
 @dataclass
 class ActionContract:
     name: str
     description: str = ""
     input_schema: Any = field(default_factory=lambda: {"type": "object", "properties": {}})
     output_schema: Any = field(default_factory=lambda: {"type": "object", "properties": {}})
+    raw_input_schema: Any | None = field(default=None, repr=False, init=False)
+    raw_output_schema: Any | None = field(default=None, repr=False, init=False)
     rules: list[Any] = field(default_factory=list)
     handler_ref: str | None = None
     transports: list[str] = field(default_factory=list)
+    stream_output: bool = False
+    stream_metadata: dict[str, Any] = field(default_factory=dict)
     metadata: dict[str, Any] = field(default_factory=dict)
     handler: Callable[..., Any] | None = None
 
     def __post_init__(self):
+        self.raw_input_schema = self.input_schema
+        self.raw_output_schema = self.output_schema
         self.input_schema = normalize_schema(self.input_schema)
         self.output_schema = normalize_schema(self.output_schema)
         if self.handler_ref is None and self.handler is not None:
@@ -91,6 +138,14 @@ class ActionContract:
             "rules": [_rule_contract(rule) for rule in self.rules],
             "handler_ref": self.handler_ref,
             "transports": list(self.transports),
+            "stream_output": self.stream_output,
+            "stream": {
+                "enabled": self.stream_output,
+                "event_types": list(self.stream_metadata.get("event_types", sorted(STREAM_EVENT_TYPES))),
+                "cooperative_cancellation": True,
+                "backpressure": self.stream_metadata.get("backpressure", "transport-bounded"),
+                "metadata": dict(self.stream_metadata),
+            },
             "metadata": dict(self.metadata),
         }
 
@@ -101,7 +156,7 @@ class ApplicationContract:
     framework: str = "Muscles"
     app: str | None = None
     runtime_mode: str | None = None
-    strategies: list[str] = field(default_factory=list)
+    contexts: list[dict[str, Any]] = field(default_factory=list)
     routes: list[dict[str, Any]] = field(default_factory=list)
     actions: list[dict[str, Any]] = field(default_factory=list)
     schemas: list[Any] = field(default_factory=list)
@@ -116,7 +171,7 @@ class ApplicationContract:
             "framework": self.framework,
             "app": self.app,
             "runtime_mode": self.runtime_mode,
-            "strategies": list(self.strategies),
+            "contexts": list(self.contexts),
             "routes": list(self.routes),
             "actions": list(self.actions),
             "schemas": list(self.schemas),
@@ -156,6 +211,8 @@ def register_action(
     rules: list[Any] | None = None,
     handler_ref: str | None = None,
     transports: list[str] | None = None,
+    stream_output: bool = False,
+    stream_metadata: dict[str, Any] | None = None,
     metadata: dict[str, Any] | None = None,
     handler: Callable[..., Any] | None = None,
 ) -> ActionContract:
@@ -167,6 +224,8 @@ def register_action(
         rules=list(rules or []),
         handler_ref=handler_ref,
         transports=list(transports or []),
+        stream_output=stream_output,
+        stream_metadata=dict(stream_metadata or {}),
         metadata=dict(metadata or {}),
         handler=handler,
     )
@@ -227,11 +286,13 @@ class ActionDispatcher:
             raise ActionPermissionDenied(action.name, str(exc)) from exc
         except Exception as exc:
             raise ActionExecutionError(action.name, str(exc)) from exc
+        value, is_stream, stream_metadata = _normalize_action_value(value)
         return ActionResult(
             action_name=action.name,
             value=value,
             transport=transport,
-            is_stream=_is_stream_result(value),
+            is_stream=is_stream,
+            metadata={"stream": stream_metadata} if is_stream else {},
         )
 
     @staticmethod
@@ -300,7 +361,46 @@ def _rule_contract(rule: Any) -> Any:
     return _rule_name(rule)
 
 
+def _normalize_action_value(value: Any) -> tuple[Any, bool, dict[str, Any]]:
+    if isinstance(value, StreamResult):
+        return value, True, dict(value.metadata)
+    if _is_stream_result(value):
+        stream = StreamResult(source=value)
+        return stream, True, dict(stream.metadata)
+    return value, False, {}
+
+
 def _is_stream_result(value: Any) -> bool:
     if isinstance(value, (str, bytes, dict, list, tuple)):
         return False
     return isinstance(value, Iterable)
+
+
+def coerce_stream_event(item: StreamEvent | dict[str, Any]) -> StreamEvent:
+    if isinstance(item, StreamEvent):
+        return item
+    if isinstance(item, dict):
+        event_type = str(item.get("type", item.get("event", "progress")))
+        if "data" in item:
+            data = item.get("data")
+        else:
+            data = {key: value for key, value in item.items() if key not in {"type", "event", "id", "event_id", "metadata"}}
+        event_id = item.get("event_id", item.get("id"))
+        metadata = item.get("metadata") or {}
+        return StreamEvent(type=event_type, data=data, event_id=event_id, metadata=dict(metadata))
+    raise TypeError("Stream items must be StreamEvent or mapping")
+
+
+def stream_events(result: StreamResult | Iterable[StreamEvent | dict[str, Any]]):
+    stream = result if isinstance(result, StreamResult) else StreamResult(source=result)
+    try:
+        for item in stream:
+            try:
+                yield coerce_stream_event(item)
+            except Exception as exc:
+                yield StreamEvent(type="error", data={"code": "stream_error", "message": str(exc)})
+                break
+    except Exception as exc:
+        yield StreamEvent(type="error", data={"code": "stream_error", "message": str(exc)})
+    finally:
+        stream.close_source()

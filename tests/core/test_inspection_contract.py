@@ -1,4 +1,4 @@
-from muscles.core import inspect_application
+from muscles.core import Context, inspect_application
 
 
 class _FakeStrategy:
@@ -6,7 +6,11 @@ class _FakeStrategy:
 
 
 class _FakeContext:
-    strategy = _FakeStrategy
+    pass
+
+
+class _FakeCliContext(_FakeContext):
+    pass
 
 
 class _FakeConfig:
@@ -37,7 +41,9 @@ _handler.method = "post"
 
 
 class _FakeApp:
-    context = _FakeContext()
+    context = Context(_FakeStrategy, transport="asgi")
+    secondary = Context(_FakeStrategy, transport=context)
+    cli = Context(_FakeStrategy, transport="cli")
     config = _FakeConfig()
     __muscles_routes__ = [_handler]
 
@@ -49,7 +55,10 @@ def test_inspection_contract_core_shape():
     assert contract["framework"] == "Muscles"
     assert contract["runtime_mode"] == "development"
     assert contract["app"] == "_FakeApp"
-    assert contract["strategies"] == ["fake"]
+    assert {item["name"] for item in contract["contexts"]} == {"context", "secondary", "cli"}
+    assert any(item["name"] == "secondary" and item["transport"] == "context" for item in contract["contexts"])
+    assert any(item["name"] == "context" and item["strategy"] == "_FakeStrategy" for item in contract["contexts"])
+    assert any(item["name"] == "cli" for item in contract["contexts"])
     assert len(contract["routes"]) == 1
     assert contract["routes"][0]["path"] == "/api/v1/bookings"
 

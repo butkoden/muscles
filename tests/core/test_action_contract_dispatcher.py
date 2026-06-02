@@ -12,9 +12,12 @@ from muscles.core import (
     ApplicationRegistry,
     Context,
     BaseStrategy,
+    StreamEvent,
+    StreamResult,
     get_application_registry,
     inspect_application,
     register_action,
+    stream_events,
 )
 
 
@@ -244,24 +247,108 @@ def test_action_dispatcher_rejects_async_handler_until_async_execution_exists():
     assert "Async action handlers are not supported" in exc_info.value.message
 
 
-def test_action_dispatcher_marks_iterable_handler_result_as_stream():
+def test_action_dispatcher_returns_core_stream_result_contract():
     app = _AppA()
 
     def stream_booking(payload, context):
-        yield {"event": "progress", "title": payload["title"]}
+        return StreamResult(
+            source=[
+                StreamEvent(type="progress", data={"title": payload["title"]}, event_id="evt-1"),
+                {"type": "result", "data": {"ok": True}},
+            ],
+            metadata={"backpressure": "bounded"},
+        )
 
     register_action(
         app,
         name="bookings.stream",
         input_schema=BOOKING_INPUT_SCHEMA,
-        metadata={"stream": True},
+        stream_output=True,
+        stream_metadata={"event_types": ["progress", "result"]},
         handler=stream_booking,
     )
 
     result = ActionDispatcher(app).execute("bookings.stream", {"title": "Live"}, transport="sse")
 
     assert result.is_stream is True
-    assert list(result.value) == [{"event": "progress", "title": "Live"}]
+    assert isinstance(result.value, StreamResult)
+    assert result.metadata["stream"] == {"backpressure": "bounded"}
+    events = list(stream_events(result.value))
+    assert events[0] == StreamEvent(type="progress", data={"title": "Live"}, event_id="evt-1")
+    assert events[1] == StreamEvent(type="result", data={"ok": True})
+
+
+def test_action_dispatcher_wraps_legacy_generator_as_stream_result():
+    app = _AppA()
+
+    def stream_booking(payload, context):
+        yield {"event": "progress", "data": {"title": payload["title"]}}
+
+    register_action(
+        app,
+        name="bookings.legacy_stream",
+        input_schema=BOOKING_INPUT_SCHEMA,
+        handler=stream_booking,
+    )
+
+    result = ActionDispatcher(app).execute("bookings.legacy_stream", {"title": "Live"}, transport="sse")
+
+    assert result.is_stream is True
+    assert isinstance(result.value, StreamResult)
+    assert list(stream_events(result.value)) == [StreamEvent(type="progress", data={"title": "Live"})]
+
+
+def test_action_dispatcher_keeps_list_result_as_non_stream():
+    app = _AppA()
+    register_action(app, name="bookings.list", handler=lambda payload, context: [{"id": 1}])
+
+    result = ActionDispatcher(app).execute("bookings.list", {}, transport="sse")
+
+    assert result.is_stream is False
+    assert result.value == [{"id": 1}]
+
+
+def test_stream_events_turns_source_error_into_error_event_and_closes_source():
+    closed = {"ok": False}
+
+    class Source:
+        def __iter__(self):
+            return self
+
+        def __next__(self):
+            raise RuntimeError("stream failed")
+
+        def close(self):
+            closed["ok"] = True
+
+    result = StreamResult(source=Source())
+    events = list(stream_events(result))
+
+    assert events == [StreamEvent(type="error", data={"code": "stream_error", "message": "stream failed"})]
+    assert closed["ok"] is True
+
+
+def test_inspect_application_marks_stream_output_contract():
+    app = _AppA()
+    register_action(
+        app,
+        name="bookings.stream_contract",
+        stream_output=True,
+        stream_metadata={"event_types": ["progress", "log", "result"]},
+        handler=lambda payload, context: StreamResult(source=[]),
+    )
+
+    contract = inspect_application(app)
+    action = next(item for item in contract["actions"] if item["name"] == "bookings.stream_contract")
+
+    assert action["stream_output"] is True
+    assert action["stream"] == {
+        "enabled": True,
+        "event_types": ["progress", "log", "result"],
+        "cooperative_cancellation": True,
+        "backpressure": "transport-bounded",
+        "metadata": {"event_types": ["progress", "log", "result"]},
+    }
 
 
 def test_action_dispatcher_raises_core_not_found_error():

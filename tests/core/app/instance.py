@@ -25,7 +25,7 @@ class App(metaclass=ApplicationMeta):
     config = Configurator(file=os.path.join(os.path.dirname(__file__), config_file),
                           basedir=os.path.dirname(os.path.realpath(__file__)))
 
-    context = Context(Strategy, {})
+    context = Context(Strategy, transport="app", params={})
 
     def __init__(self):
         self.init_auto_packages(self.config)

@@ -3,8 +3,15 @@ from __future__ import annotations
 from typing import Any
 
 from .runtime_mode import app_runtime_mode
+from .context import Context
 from .registry import get_application_registry
 from .actions import ApplicationContract
+
+
+def _serialize_context_transport(transport: Any) -> Any:
+    if isinstance(transport, Context):
+        return getattr(transport, "_name", None)
+    return transport
 
 
 def _flatten_config(data: Any, prefix: str = "") -> dict[str, Any]:
@@ -20,17 +27,54 @@ def _flatten_config(data: Any, prefix: str = "") -> dict[str, Any]:
     return out
 
 
-def _strategy_name(app) -> list[str]:
-    context = getattr(app, "context", None)
-    if context is None:
-        return []
-    strategy = getattr(context, "strategy", None)
-    if strategy is None:
-        return []
-    name = getattr(strategy, "__name__", None)
-    if name is None:
-        name = strategy.__class__.__name__
-    return [name.lower().replace("strategy", "").strip("_")]
+def _collect_contexts(app) -> list[dict[str, Any]]:
+    contexts: list[dict[str, Any]] = []
+    seen: set[str] = set()
+
+    for cls in app.__class__.mro():
+        for name, value in vars(cls).items():
+            if not isinstance(value, Context) or not name:
+                continue
+            if name in seen:
+                continue
+            seen.add(name)
+            strategy = getattr(value, "strategy", None)
+            strategy_name = None
+            if strategy is not None:
+                strategy_name = getattr(strategy, "__name__", None)
+                if strategy_name is None and not isinstance(strategy, type):
+                    strategy_name = strategy.__class__.__name__
+                elif strategy_name is None:
+                    strategy_name = str(strategy)
+            contexts.append(
+                {
+                    "name": name,
+                    "transport": _serialize_context_transport(getattr(value, "transport", None)),
+                    "strategy": strategy_name,
+                }
+            )
+
+    instance_contexts = vars(app)
+    for name, value in instance_contexts.items():
+        if not isinstance(value, Context) or name in seen:
+            continue
+        strategy = getattr(value, "strategy", None)
+        strategy_name = None
+        if strategy is not None:
+            strategy_name = getattr(strategy, "__name__", None)
+            if strategy_name is None and not isinstance(strategy, type):
+                strategy_name = strategy.__class__.__name__
+            elif strategy_name is None:
+                strategy_name = str(strategy)
+        contexts.append(
+            {
+                "name": name,
+                "transport": _serialize_context_transport(getattr(value, "transport", None)),
+                "strategy": strategy_name,
+            }
+        )
+
+    return contexts
 
 
 def _collect_routes(app) -> list[dict[str, Any]]:
@@ -91,7 +135,7 @@ def inspect_application(app=None, include_sensitive: bool = False) -> dict[str, 
     contract = ApplicationContract(
         app=app.__class__.__name__ if app is not None else None,
         runtime_mode=app_runtime_mode(app).value if app is not None else app_runtime_mode().value,
-        strategies=_strategy_name(app) if app is not None else [],
+        contexts=_collect_contexts(app) if app is not None else [],
         routes=_collect_routes(app) if app is not None else [],
         actions=_collect_actions(app) if app is not None else [],
         schemas=list(getattr(registry, "schemas", []) or []) if registry is not None else [],
