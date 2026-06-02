@@ -15,8 +15,8 @@ class WsgiStrategy(BaseStrategy):
 
 class App(metaclass=ApplicationMeta):
     
-    # Тут мы определяем наш контекст тратегии и явно указываем транспорт.
-    context = Context(WsgiStrategy, transport="wsgi", params={})
+    # Тут мы определяем наш контекст стратегии и передаем параметры контекста.
+    context = Context(WsgiStrategy, params={})
 
     def __init__(self):
         self.init_auto_packages(self.config, package_paths=self.package_paths)
