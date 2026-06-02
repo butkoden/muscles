@@ -99,7 +99,7 @@ from muscles.wsgi import WsgiStrategy
 
 class App(metaclass=ApplicationMeta):
     config = Configurator(obj={"main": {"DEBUG": True}})
-    context = Context(WsgiStrategy, transport="wsgi", params={})
+    context = Context(WsgiStrategy, params={})
 
     def run(self, *args):
         return self.context.execute(*args, shutup=True)

@@ -16,9 +16,9 @@ from muscles.core import (
     StreamResult,
     get_application_registry,
     inspect_application,
-    register_action,
     stream_events,
 )
+from muscles.core.core.actions import _register_action
 
 
 class _EchoStrategy(BaseStrategy):
@@ -59,7 +59,7 @@ def test_action_contract_registers_in_application_registry():
     def create_booking(payload, context):
         return {"id": 1, "title": payload["title"], "transport": context.transport}
 
-    contract = register_action(
+    contract = _register_action(
         app,
         name="bookings.create",
         description="Create booking",
@@ -96,7 +96,7 @@ def test_app_action_decorator_registers_contract_and_handler():
 def test_inspect_application_returns_machine_readable_action_contract():
     app = _AppA()
 
-    register_action(
+    _register_action(
         app,
         name="bookings.inspect",
         description="Inspect booking",
@@ -121,7 +121,7 @@ def test_inspect_application_returns_machine_readable_action_contract():
 
 def test_action_dispatcher_validates_input_and_raises_core_error():
     app = _AppA()
-    register_action(
+    _register_action(
         app,
         name="bookings.validate",
         input_schema=BOOKING_INPUT_SCHEMA,
@@ -141,7 +141,7 @@ def test_action_dispatcher_checks_callable_rules_in_core():
     def deny(payload, context):
         return False
 
-    register_action(
+    _register_action(
         app,
         name="bookings.denied",
         input_schema=BOOKING_INPUT_SCHEMA,
@@ -159,7 +159,7 @@ def test_action_dispatcher_normalizes_permission_error_from_rule():
     def deny(payload, context):
         raise PermissionError("Denied by rule engine")
 
-    register_action(
+    _register_action(
         app,
         name="bookings.rule_error",
         input_schema=BOOKING_INPUT_SCHEMA,
@@ -181,7 +181,7 @@ def test_action_dispatcher_calls_handler_with_action_context():
         calls.append((payload, context.action.name, context.transport))
         return {"id": 1, "title": payload["title"]}
 
-    register_action(
+    _register_action(
         app,
         name="bookings.dispatch",
         input_schema=BOOKING_INPUT_SCHEMA,
@@ -199,7 +199,7 @@ def test_action_dispatcher_calls_handler_with_action_context():
 def test_action_dispatcher_denies_transport_not_declared_in_contract():
     app = _AppA()
 
-    register_action(
+    _register_action(
         app,
         name="bookings.http_only",
         input_schema=BOOKING_INPUT_SCHEMA,
@@ -216,7 +216,7 @@ def test_action_dispatcher_denies_transport_not_declared_in_contract():
 def test_action_dispatcher_allows_transport_when_contract_is_open():
     app = _AppA()
 
-    register_action(
+    _register_action(
         app,
         name="bookings.open_transport",
         input_schema=BOOKING_INPUT_SCHEMA,
@@ -234,7 +234,7 @@ def test_action_dispatcher_rejects_async_handler_until_async_execution_exists():
     async def create_booking(payload, context):
         return {"title": payload["title"]}
 
-    register_action(
+    _register_action(
         app,
         name="bookings.async",
         input_schema=BOOKING_INPUT_SCHEMA,
@@ -259,7 +259,7 @@ def test_action_dispatcher_returns_core_stream_result_contract():
             metadata={"backpressure": "bounded"},
         )
 
-    register_action(
+    _register_action(
         app,
         name="bookings.stream",
         input_schema=BOOKING_INPUT_SCHEMA,
@@ -284,7 +284,7 @@ def test_action_dispatcher_wraps_legacy_generator_as_stream_result():
     def stream_booking(payload, context):
         yield {"event": "progress", "data": {"title": payload["title"]}}
 
-    register_action(
+    _register_action(
         app,
         name="bookings.legacy_stream",
         input_schema=BOOKING_INPUT_SCHEMA,
@@ -300,7 +300,7 @@ def test_action_dispatcher_wraps_legacy_generator_as_stream_result():
 
 def test_action_dispatcher_keeps_list_result_as_non_stream():
     app = _AppA()
-    register_action(app, name="bookings.list", handler=lambda payload, context: [{"id": 1}])
+    _register_action(app, name="bookings.list", handler=lambda payload, context: [{"id": 1}])
 
     result = ActionDispatcher(app).execute("bookings.list", {}, transport="sse")
 
@@ -330,7 +330,7 @@ def test_stream_events_turns_source_error_into_error_event_and_closes_source():
 
 def test_inspect_application_marks_stream_output_contract():
     app = _AppA()
-    register_action(
+    _register_action(
         app,
         name="bookings.stream_contract",
         stream_output=True,
@@ -362,8 +362,8 @@ def test_action_registry_is_isolated_between_app_instances():
     app_a = _AppA()
     app_b = _AppB()
 
-    register_action(app_a, name="bookings.a", handler=lambda payload, context: payload)
-    register_action(app_b, name="bookings.b", handler=lambda payload, context: payload)
+    _register_action(app_a, name="bookings.a", handler=lambda payload, context: payload)
+    _register_action(app_b, name="bookings.b", handler=lambda payload, context: payload)
 
     assert get_application_registry(app_a).get_action("bookings.a").name == "bookings.a"
     assert get_application_registry(app_b).get_action("bookings.b").name == "bookings.b"
@@ -378,7 +378,7 @@ def test_action_contract_does_not_leak_sensitive_config():
         (),
         {"_object": {"secret": {"token": "hidden"}, "main": {"ENV": "development"}}},
     )()
-    register_action(app, name="bookings.safe", handler=lambda payload, context: payload)
+    _register_action(app, name="bookings.safe", handler=lambda payload, context: payload)
 
     contract = inspect_application(app)
 
