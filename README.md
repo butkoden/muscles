@@ -99,7 +99,7 @@ from muscles.wsgi import WsgiStrategy
 
 class App(metaclass=ApplicationMeta):
     config = Configurator(obj={"main": {"DEBUG": True}})
-    context = Context(WsgiStrategy, {})
+    context = Context(WsgiStrategy, transport="wsgi", params={})
 
     def run(self, *args):
         return self.context.execute(*args, shutup=True)
@@ -153,7 +153,7 @@ from muscles import ApplicationMeta, Context, ActionDispatcher
 
 
 class BookingApp(metaclass=ApplicationMeta):
-    context = Context(MyStrategy, {})
+    context = Context(MyStrategy, transport="app", params={})
 
 
 app = BookingApp()

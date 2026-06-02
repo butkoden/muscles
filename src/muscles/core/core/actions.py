@@ -111,6 +111,8 @@ class ActionContract:
     description: str = ""
     input_schema: Any = field(default_factory=lambda: {"type": "object", "properties": {}})
     output_schema: Any = field(default_factory=lambda: {"type": "object", "properties": {}})
+    raw_input_schema: Any | None = field(default=None, repr=False, init=False)
+    raw_output_schema: Any | None = field(default=None, repr=False, init=False)
     rules: list[Any] = field(default_factory=list)
     handler_ref: str | None = None
     transports: list[str] = field(default_factory=list)
@@ -120,6 +122,8 @@ class ActionContract:
     handler: Callable[..., Any] | None = None
 
     def __post_init__(self):
+        self.raw_input_schema = self.input_schema
+        self.raw_output_schema = self.output_schema
         self.input_schema = normalize_schema(self.input_schema)
         self.output_schema = normalize_schema(self.output_schema)
         if self.handler_ref is None and self.handler is not None:
@@ -152,7 +156,7 @@ class ApplicationContract:
     framework: str = "Muscles"
     app: str | None = None
     runtime_mode: str | None = None
-    strategies: list[str] = field(default_factory=list)
+    contexts: list[dict[str, Any]] = field(default_factory=list)
     routes: list[dict[str, Any]] = field(default_factory=list)
     actions: list[dict[str, Any]] = field(default_factory=list)
     schemas: list[Any] = field(default_factory=list)
@@ -167,7 +171,7 @@ class ApplicationContract:
             "framework": self.framework,
             "app": self.app,
             "runtime_mode": self.runtime_mode,
-            "strategies": list(self.strategies),
+            "contexts": list(self.contexts),
             "routes": list(self.routes),
             "actions": list(self.actions),
             "schemas": list(self.schemas),

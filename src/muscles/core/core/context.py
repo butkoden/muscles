@@ -1,6 +1,6 @@
 from __future__ import annotations
 from functools import wraps
-from typing import Optional
+from typing import Any, Optional
 from abc import ABC, abstractmethod
 import inspect
 from .heandler import BaseResponseHandler
@@ -50,6 +50,7 @@ class Context:
 
     def __init__(self,
                  strategy: BaseStrategy,
+                 transport: str | Context | Any | None = None,
                  options: Optional[dict] = None,
                  params: Optional[dict] = None,
                  error_handler: Optional[BaseResponseHandler] = None) -> None:
@@ -57,6 +58,10 @@ class Context:
         Обычно Контекст принимает стратегию через конструктор, а также
         предоставляет сеттер для её изменения во время выполнения.
         """
+        if isinstance(transport, dict) and options is None and params is None:
+            params = transport
+            transport = None
+
         if params is None:
             params = {}
         if options is None:
@@ -65,6 +70,7 @@ class Context:
             error_handler = ResponseHandler
         self._strategy = strategy
         self._error_handler = error_handler
+        self.transport = transport
         self._owner = None
         self._strategy_instance = None
         self.before_start_function_list = []
@@ -212,8 +218,24 @@ class Context:
         if self._params:
             execute_kwargs.update(self._params)
         execute_kwargs['container'] = self._owner
+        if self._strategy_accepts_entrypoint_context(strategy):
+            execute_kwargs.setdefault('entrypoint_context', self)
         result = strategy.execute(*args, error_handler=self._error_handler, **execute_kwargs)
         '''Запускаем обработчики after_start'''
         for func in self.after_start_function_list:
             func(self._owner, result)
         return result
+
+    @staticmethod
+    def _strategy_accepts_entrypoint_context(strategy) -> bool:
+        try:
+            signature = inspect.signature(strategy.execute)
+        except Exception:
+            return True
+
+        for parameter in signature.parameters.values():
+            if parameter.kind == inspect.Parameter.VAR_KEYWORD:
+                return True
+            if parameter.name == 'entrypoint_context':
+                return True
+        return False
