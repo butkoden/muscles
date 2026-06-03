@@ -20,5 +20,6 @@ def test_build_route_aliases_contains_canonical_and_compatibility_aliases():
 
 def test_canonical_alias_pairs_groups_aliases_by_canonical_route():
     payload = canonical_alias_pairs(prefix="/api", schema_url="schema", swagger_url="/swagger", openapi_url="/openapi.json", docs_url="/docs")
-    assert payload["/api/openapi.json"] == ["/api/schema", "/api/swagger"]
+    assert payload["/api/openapi.json"] == ["/api/schema"]
+    assert payload["/api/docs"] == ["/api/swagger"]
     assert payload["/api/healthz"] == ["/api/health"]

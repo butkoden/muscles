@@ -64,7 +64,7 @@ def test_inspection_contract_core_shape():
     assert "route_contract" in contract
     assert contract["route_contract"]["canonical"]["openapi"] == "/openapi.json"
     assert contract["route_contract"]["aliases"]["schema"] == "/openapi.json"
-    assert contract["routes"][0]["canonical"] in {"/api/v1/bookings", _FakeRouteNode.full_route}
+    assert contract["routes"][0]["canonical"] == _FakeRouteNode.full_route
     assert set(contract["routes"][0]["aliases"]) == set()
 
 
