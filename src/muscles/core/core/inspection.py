@@ -6,6 +6,7 @@ from .runtime_mode import app_runtime_mode
 from .context import Context
 from .registry import get_application_registry
 from .actions import ApplicationContract
+from ..route_contract import CANONICAL_ROUTES
 
 
 def _serialize_context_transport(transport: Any) -> Any:
@@ -85,12 +86,17 @@ def _collect_routes(app) -> list[dict[str, Any]]:
     routes = []
     for handler in handlers:
         node = getattr(handler, "node", None)
+        route_key = getattr(node, "route", None)
+        canonical_route = getattr(handler, "canonical_route", None) or route_key
+        aliases = sorted(set(getattr(handler, "aliases", []) or []))
         routes.append(
             {
                 "name": getattr(node, "key", None) or getattr(handler, "__name__", "unknown"),
-                "path": getattr(node, "full_route", None),
+                "path": getattr(node, "full_route", None) or route_key,
                 "method": getattr(handler, "method", None),
                 "handler": f"{getattr(handler, '__module__', '')}.{getattr(handler, '__name__', '')}".strip("."),
+                "canonical": canonical_route,
+                "aliases": aliases,
             }
         )
     return routes
@@ -150,5 +156,20 @@ def inspect_application(app=None, include_sensitive: bool = False) -> dict[str, 
     contract.update({
         "commands": [],
         "warnings": [],
+        "route_contract": {
+            "canonical": {
+                "openapi": CANONICAL_ROUTES["openapi"],
+                "docs": CANONICAL_ROUTES["docs"],
+                "redoc": CANONICAL_ROUTES["redoc"],
+                "healthz": CANONICAL_ROUTES["healthz"],
+                "ready": CANONICAL_ROUTES["ready"],
+                "live": CANONICAL_ROUTES["live"],
+            },
+            "aliases": {
+                "schema": CANONICAL_ROUTES["openapi"],
+                "swagger": CANONICAL_ROUTES["docs"],
+                "health": CANONICAL_ROUTES["healthz"],
+            },
+        },
     })
     return contract
