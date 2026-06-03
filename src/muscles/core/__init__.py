@@ -14,6 +14,13 @@ from .core import ActionError, ActionExecutionError, ActionNotFound, ActionPermi
 from .core import StreamEvent, StreamResult, coerce_stream_event, stream_events
 from .core import action, dispatch_action
 from .response import BaseResponse, JsonResponse, HtmlResponse, normalize_response
+from .errors import normalize_problem_payload
+from .route_contract import (
+    CANONICAL_ALIASES,
+    CANONICAL_ROUTES,
+    canonical_alias_pairs,
+    build_route_aliases,
+)
 from .schema import Schema
 from .schema import ResponseBody
 from .schema import JsonResponseBody
@@ -207,12 +214,17 @@ __all__ = (
     "JsonResponse",
     "HtmlResponse",
     "normalize_response",
+    "normalize_problem_payload",
     "Schema",
     "ResponseBody",
     "JsonResponseBody",
     "XmlResponseBody",
     "HtmlResponseBody",
     "TextResponseBody",
+    "build_route_aliases",
+    "canonical_alias_pairs",
+    "CANONICAL_ROUTES",
+    "CANONICAL_ALIASES",
     "ResponseBody",
     "BaseSecurity",
     "BasicAuthSecurity",

@@ -285,7 +285,7 @@ class Itinerary:
         return handler
 
     def add(self, route, key=None, handler=None, method=None, content_type=None,
-            redirect: str = None, module=None):
+            redirect: str = None, module=None, canonical_route: str = None, aliases: list[str] = None):
         """
         Добавляет функцию обработки маршрута
 
@@ -319,6 +319,7 @@ class Itinerary:
         chunks = route.split('/')
         self._match_cache.clear()
         node = self.node
+        canonical_route = canonical_route if canonical_route is not None else route
         if key is None or not key:
             key = '.'.join(tuple(chunks[1:] if chunks[0] == '' else chunks))
         _key, key = key, None
@@ -348,6 +349,8 @@ class Itinerary:
                     route_record = {
                         "key": key,
                         "route": route,
+                        "canonical_route": canonical_route,
+                        "aliases": aliases or [],
                         'method': method,
                         'content_type': content_type,
                         'method_upper': (method or '*').upper() if method else '*',
@@ -361,6 +364,8 @@ class Itinerary:
             node = node.instance(normalized_chunk, full_route=full_route, key=key, dictionary_key=dictionary_key, rule=rule)
         handler.node = node
         handler.full_route = full_route
+        handler.canonical_route = canonical_route
+        handler.aliases = aliases or []
 
         if method == '*' and handler is not None and handler.__name__ in self.legal_http_method:
             handler.method = handler.__name__
