@@ -87,12 +87,13 @@ def _collect_routes(app) -> list[dict[str, Any]]:
     for handler in handlers:
         node = getattr(handler, "node", None)
         route_key = getattr(node, "route", None)
-        canonical_route = getattr(handler, "canonical_route", None) or route_key
+        route_full = getattr(node, "full_route", None)
+        canonical_route = getattr(handler, "canonical_route", None) or route_full or route_key
         aliases = sorted(set(getattr(handler, "aliases", []) or []))
         routes.append(
             {
                 "name": getattr(node, "key", None) or getattr(handler, "__name__", "unknown"),
-                "path": getattr(node, "full_route", None) or route_key,
+                "path": route_full or route_key,
                 "method": getattr(handler, "method", None),
                 "handler": f"{getattr(handler, '__module__', '')}.{getattr(handler, '__name__', '')}".strip("."),
                 "canonical": canonical_route,
