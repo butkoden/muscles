@@ -6,17 +6,23 @@ from muscles.core.core import ApplicationMeta
 
 
 class TestInterface:
+    __test__ = False
+
     @abstractmethod
     def test(self):
         return "Passive"
 
 
 class Test1Dependency(TestInterface):
+    __test__ = False
+
     def test(self):
         return "Active 1"
 
 
 class Test2Dependency(TestInterface):
+    __test__ = False
+
     def test(self):
         return "Active 2"
 
