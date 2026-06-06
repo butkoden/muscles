@@ -14,11 +14,24 @@ from ..schema.pydantic_bridge import to_json_schema
 class ActionError(Exception):
     code = "action_error"
 
-    def __init__(self, action_name: str, message: str, data: Any = None):
-        super().__init__(message)
+    def __init__(
+        self,
+        action_name: str | None = None,
+        message: str | None = None,
+        data: Any = None,
+        *,
+        status: int = 400,
+        reason: str | None = None,
+        error_type: str | None = None,
+    ):
+        detail = reason if reason is not None else (message if message is not None else "")
+        super().__init__(detail)
         self.action_name = action_name
-        self.message = message
+        self.message = detail
         self.data = data
+        self.status = status
+        self.reason = reason if reason is not None else message
+        self.error_type = error_type
 
 
 class ActionNotFound(ActionError):
