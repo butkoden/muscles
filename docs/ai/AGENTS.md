@@ -1,18 +1,16 @@
-# Muscles AI Instructions
+## Muscles AI Instructions
 
 ## Required Workflow
 
-1. `muscles capabilities --json`
-2. `muscles inspect --json`
-3. `muscles generate ...`
-4. `muscles doctor --json`
-5. `muscles test`
+- Старт с чтения `AGENTS.md`, `docs/ai/AGENTS.md` и `docs/ai/environment-bootstrap.md`.
+- Запуск `make ai-bootstrap`.
+- Затем, по задаче: `muscles capabilities --json`, `muscles inspect --json`, `muscles generate ...`, `muscles doctor --json`, `muscles test`.
 
 ## Rules
 
-- Follow golden path structure.
-- Do not create handlers outside `app/web`, `app/api`, `app/cli`.
-- Keep input/output in schemas.
-- Keep invariants in value objects.
-- Do not duplicate business logic between HTTP and CLI handlers.
-- Do not rename technical identifiers without explicit migration.
+- Следовать golden path структуре.
+- Не создавать handlers вне `app/web`, `app/api`, `app/cli`.
+- Вход/выход только через схемы.
+- Инварианты держать во value objects.
+- Не дублировать бизнес-логику между HTTP и CLI обработчиками.
+- Не переименовывать технические идентификаторы без явной миграции.
