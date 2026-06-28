@@ -60,6 +60,14 @@ def _path_matches(pattern: str, path: str) -> bool:
     return fnmatch(path, pattern)
 
 
+def _auth_security(auth):
+    if auth is False or auth is None:
+        return []
+    if isinstance(auth, list):
+        return auth
+    return [auth]
+
+
 class RouteGroup:
     def __init__(self, itinerary, prefix: str, **metadata):
         self.itinerary = itinerary
@@ -204,6 +212,9 @@ class Itinerary:
 
     def get_guards(self, request_or_path):
         path = request_or_path if isinstance(request_or_path, str) else getattr(request_or_path, "path", "/")
+        route = None if isinstance(request_or_path, str) else getattr(request_or_path, "route", None)
+        if self.is_auth_disabled(route):
+            return []
         handlers = []
         for guard in self._guards:
             if not _path_matches(guard["pattern"], path):
@@ -212,6 +223,12 @@ class Itinerary:
                 continue
             handlers.append(guard["handler"])
         return handlers
+
+    def is_auth_disabled(self, route_or_handler):
+        if route_or_handler is None:
+            return False
+        handler = route_or_handler.get("handler") if isinstance(route_or_handler, dict) else route_or_handler
+        return getattr(handler, "auth", None) is False
 
     def to_url(self, route_key, params):
         """
@@ -359,6 +376,8 @@ class Itinerary:
         return None
 
     def _trigger_set_handler(self, handler, *args, **kwargs):
+        if "auth" in kwargs and kwargs["auth"] is not None:
+            kwargs["security"] = _auth_security(kwargs["auth"])
         handler.is_action = kwargs.get('is_action', False)
         handler.key = kwargs.get('key')
         handler.module = kwargs.get('module')

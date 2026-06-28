@@ -43,6 +43,30 @@ def show_document(request, id):
 Метаданные группы наследуются зарегистрированными обработчиками. Сборщики
 OpenAPI в ASGI и WSGI используют их для `tags`, `security` и общих `responses`.
 
+Для переопределения авторизации на конкретном endpoint используйте `auth`:
+
+```python
+api = Itinerary(name="api")
+jwt_auth = BearerAuthSecurity()
+api_routes = api.group("/api", security=[jwt_auth], response={401: "Unauthorized"})
+
+
+@api_routes.init("/login", method="post", auth=False)
+def login(request):
+    return {"token": "issued-token"}
+
+
+@api_routes.init("/service-token", method="post", auth=["ApiKey"])
+def service_token(request):
+    return {"ok": True}
+```
+
+`auth=False` делает endpoint публичным: для этого маршрута пропускаются
+подходящие `guards` и унаследованные метаданные `security`. `auth=[...]`
+заменяет унаследованную схему безопасности на конкретном endpoint.
+Используйте `guard(..., except_=...)` для исключений по пути, а `auth=False` -
+когда исключение принадлежит самому маршруту.
+
 ## Middleware и guards
 
 `use()` регистрирует middleware. Middleware получает `(request, call_next)` и
@@ -67,6 +91,15 @@ def require_auth(request):
 
 
 api.guard("/api/**", require_auth, except_=["/api/public/**"])
+```
+
+Для отдельных публичных endpoint внутри защищённого API лучше использовать
+метаданные маршрута:
+
+```python
+@api.init("/api/login", method="post", auth=False)
+def login(request):
+    return {"token": "issued-token"}
 ```
 
 Рантайм-репозитории выполняют `guards` до вызова прикладного обработчика.

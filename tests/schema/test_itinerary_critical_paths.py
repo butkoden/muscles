@@ -110,6 +110,42 @@ def test_guard_selects_path_by_prefix_and_exclusions():
     assert itinerary.get_guards(public) == []
 
 
+def test_endpoint_auth_false_overrides_group_security_and_matching_guards():
+    itinerary = _make_itinerary("critical-route-auth-override")
+    guard = lambda request: {"error": "unauthorized"}, 401
+    group = itinerary.group("/api", security=["Bearer"])
+
+    itinerary.guard("/api/**", guard)
+
+    @group.init("/login", method="post", auth=False)
+    def login(request):
+        return {"ok": True}
+
+    request = Request("/api/login", method="POST")
+    route, params = itinerary.get_current_route(request)
+    request.route = route
+
+    assert params == {}
+    assert route["handler"].auth is False
+    assert route["handler"].security == []
+    assert itinerary.is_auth_disabled(route) is True
+    assert itinerary.get_guards(request) == []
+
+
+def test_endpoint_auth_list_replaces_inherited_group_security():
+    itinerary = _make_itinerary("critical-route-auth-replace")
+    group = itinerary.group("/api", security=["Bearer"])
+
+    @group.init("/service-token", method="get", auth=["ApiKey"])
+    def service_token(request):
+        return {"ok": True}
+
+    route, _ = itinerary.get_current_route(Request("/api/service-token", method="GET"))
+
+    assert route["handler"].auth == ["ApiKey"]
+    assert route["handler"].security == ["ApiKey"]
+
+
 def test_use_registers_global_middleware():
     itinerary = _make_itinerary("critical-middleware")
     middleware = lambda request, call_next: call_next(request)

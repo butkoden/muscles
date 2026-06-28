@@ -154,6 +154,17 @@ def show_document(request, id):
 ASGI and WSGI OpenAPI builders use group metadata for tags, security and common
 responses.
 
+Endpoint auth can override group auth:
+
+```python
+@api.init("/api/login", method="post", auth=False)
+def login(request):
+    return {"token": "issued-token"}
+```
+
+Use `auth=False` for public endpoints inside protected route groups. Use
+`auth=[...]` to replace inherited security for one endpoint.
+
 More detail: [backend-framework.md](backend-framework.md).
 
 ## Middleware, Guards And CORS
@@ -180,6 +191,9 @@ def require_auth(request):
 
 api.guard("/api/**", require_auth, except_=["/api/public/**"])
 ```
+
+Prefer `auth=False` over a long `except_` list when a single endpoint such as
+`/api/login` intentionally stays public.
 
 CORS is provided as shared middleware:
 

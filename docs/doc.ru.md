@@ -157,6 +157,18 @@ def show_document(request, id):
 Сборщики OpenAPI в ASGI и WSGI используют метаданные группы для `tags`,
 `security` и общих `responses`.
 
+Авторизацию endpoint можно переопределить поверх группы:
+
+```python
+@api.init("/api/login", method="post", auth=False)
+def login(request):
+    return {"token": "issued-token"}
+```
+
+Используйте `auth=False` для публичных endpoint внутри защищённых групп
+маршрутов. Используйте `auth=[...]`, чтобы заменить унаследованную схему
+безопасности для одного endpoint.
+
 Подробнее: [backend-framework.md](backend-framework.md).
 
 ## Middleware, guards и CORS
@@ -183,6 +195,9 @@ def require_auth(request):
 
 api.guard("/api/**", require_auth, except_=["/api/public/**"])
 ```
+
+Когда отдельный endpoint вроде `/api/login` намеренно остаётся публичным,
+лучше использовать `auth=False`, а не раздувать список `except_`.
 
 CORS доступен как общий middleware:
 

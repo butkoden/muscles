@@ -42,6 +42,29 @@ def show_document(request, id):
 Group metadata is inherited by registered handlers. ASGI and WSGI OpenAPI
 builders use this metadata for tags, security and common responses.
 
+Use endpoint-level `auth` to override inherited auth metadata:
+
+```python
+api = Itinerary(name="api")
+jwt_auth = BearerAuthSecurity()
+api_routes = api.group("/api", security=[jwt_auth], response={401: "Unauthorized"})
+
+
+@api_routes.init("/login", method="post", auth=False)
+def login(request):
+    return {"token": "issued-token"}
+
+
+@api_routes.init("/service-token", method="post", auth=["ApiKey"])
+def service_token(request):
+    return {"ok": True}
+```
+
+`auth=False` makes the endpoint public: matching guards and inherited security
+metadata are skipped for that route. `auth=[...]` replaces inherited security on
+that endpoint. Use `guard(..., except_=...)` for path-level exclusions, and
+`auth=False` when the route itself owns the override.
+
 ## Middleware And Guards
 
 `use()` registers middleware. A middleware receives `(request, call_next)` and
@@ -65,6 +88,14 @@ def require_auth(request):
 
 
 api.guard("/api/**", require_auth, except_=["/api/public/**"])
+```
+
+For single public endpoints inside a protected API, prefer endpoint metadata:
+
+```python
+@api.init("/api/login", method="post", auth=False)
+def login(request):
+    return {"token": "issued-token"}
 ```
 
 ## Exception Mapping
