@@ -1,24 +1,25 @@
-# Backend Framework Primitives
+# Backend-примитивы фреймворка
 
 Язык: русский  
-English version: [backend-framework.md](backend-framework.md)
+Английская версия: [backend-framework.md](backend-framework.md)
 
-Muscles core содержит общие backend primitives, которые используют ASGI и WSGI
-runtimes. Идея в том, чтобы route metadata, security и response contracts жили
-в одном месте, а не в transport-specific monkey patches.
+Ядро Muscles содержит общие backend-примитивы, которые используют ASGI и WSGI.
+Идея в том, чтобы метаданные маршрутов, правила безопасности и контракты
+ответов жили в одном месте, а не в правках, привязанных к конкретному
+транспорту.
 
-Runtime implementations:
+Реализации рантаймов:
 
 - [`muscles-asgi`](https://github.com/butkoden/muscles-asgi) исполняет эти
-  primitives в ASGI: typed handler arguments, guards, security, CORS preflight,
-  OpenAPI projection и `TestClient`.
+  примитивы в ASGI: типизированные аргументы обработчиков, `guards`, правила
+  безопасности, CORS preflight, OpenAPI-проекцию и `TestClient`.
 - [`muscles-wsgi`](https://github.com/butkoden/muscles-wsgi) исполняет те же
-  primitives в WSGI: typed handler arguments, guards, security, CORS preflight
-  и OpenAPI projection.
+  примитивы в WSGI: типизированные аргументы обработчиков, `guards`, правила
+  безопасности, CORS preflight и OpenAPI-проекцию.
 
-## Route Groups
+## Группы маршрутов
 
-`group()` добавляет общий prefix и metadata для набора routes:
+`group()` добавляет общий префикс и метаданные для набора маршрутов:
 
 ```python
 from muscles import Itinerary, BearerAuthSecurity
@@ -39,13 +40,13 @@ def show_document(request, id):
     return {"id": id}
 ```
 
-Metadata группы наследуется зарегистрированными handlers. ASGI и WSGI OpenAPI
-builders используют её для tags, security и common responses.
+Метаданные группы наследуются зарегистрированными обработчиками. Сборщики
+OpenAPI в ASGI и WSGI используют их для `tags`, `security` и общих `responses`.
 
-## Middleware And Guards
+## Middleware и guards
 
 `use()` регистрирует middleware. Middleware получает `(request, call_next)` и
-возвращает response:
+возвращает ответ:
 
 ```python
 def audit_middleware(request, call_next):
@@ -56,8 +57,8 @@ def audit_middleware(request, call_next):
 api.use(audit_middleware)
 ```
 
-`guard()` регистрирует route guard по path pattern. `/**` матчится на вложенные
-paths:
+`guard()` регистрирует проверку маршрута по шаблону пути. `/**` совпадает с
+вложенными путями:
 
 ```python
 def require_auth(request):
@@ -68,12 +69,12 @@ def require_auth(request):
 api.guard("/api/**", require_auth, except_=["/api/public/**"])
 ```
 
-Runtime-репозитории выполняют guards до вызова business handler.
+Рантайм-репозитории выполняют `guards` до вызова прикладного обработчика.
 
-## Exception Mapping
+## Сопоставление исключений
 
-`map_error()` связывает domain exceptions с HTTP status codes и optional custom
-handlers:
+`map_error()` связывает доменные исключения с HTTP-статусами и
+необязательными пользовательскими обработчиками:
 
 ```python
 class WorkspaceAccessDenied(Exception):
@@ -84,13 +85,13 @@ api.map_error(WorkspaceAccessDenied, status=404)
 api.map_error(ValueError, status=422)
 ```
 
-Когда ASGI или WSGI handler выбрасывает mapped exception, runtime сохраняет
-mapped status до создания problem response.
+Когда ASGI- или WSGI-обработчик выбрасывает сопоставленное исключение, рантайм
+сохраняет назначенный статус до создания ответа об ошибке.
 
-## Bearer JWT Auth
+## Bearer JWT-аутентификация
 
-`BearerAuthSecurity` описывает HTTP bearer auth в OpenAPI. `BearerJwtAuth`
-добавляет небольшой HS256 JWT provider:
+`BearerAuthSecurity` описывает HTTP bearer-аутентификацию в OpenAPI.
+`BearerJwtAuth` добавляет небольшой HS256 JWT-провайдер:
 
 ```python
 from muscles import BearerJwtAuth
@@ -103,12 +104,13 @@ assert auth_result["payload"]["sub"] == "user-1"
 assert auth_result["user"].uid == "user-1"
 ```
 
-`authenticate_header()` принимает дублирующийся bearer prefix для совместимости
-с legacy clients и возвращает `{"payload": ..., "token": ..., "user": ...}`.
+`authenticate_header()` принимает дублирующийся bearer-префикс для
+совместимости с legacy-клиентами и возвращает
+`{"payload": ..., "token": ..., "user": ...}`.
 
-## Responses
+## Ответы
 
-Core response helpers нормализуются всеми runtimes:
+Помощники ответов ядра нормализуются всеми рантаймами:
 
 ```python
 from muscles import BytesResponse, FileResponse, JsonResponse, NoContentResponse
@@ -119,12 +121,12 @@ return BytesResponse(b"PNG", content_type="image/png")
 return FileResponse("/tmp/report.pdf", as_attachment=True)
 ```
 
-`None` нормализуется в `204 No Content`, mappings - в JSON, strings - в HTML,
+`None` нормализуется в `204 No Content`, mappings - в JSON, строки - в HTML,
 bytes - в `application/octet-stream`.
 
 ## CORS
 
-`cors()` используется как route middleware:
+`cors()` используется как middleware маршрута:
 
 ```python
 from muscles import cors
@@ -135,5 +137,5 @@ api.use(cors(
 ))
 ```
 
-ASGI и WSGI runtimes используют один middleware для обычных responses и
-`OPTIONS` preflight responses.
+ASGI и WSGI используют один middleware для обычных ответов и `OPTIONS`
+preflight-ответов.

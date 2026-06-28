@@ -1,74 +1,75 @@
-# Документация Muscles Core
+# Документация ядра Muscles
 
 Язык: русский  
-English version: [doc.md](doc.md)
+Английская версия: [doc.md](doc.md)
 
 Это каноническая точка входа в документацию ядра Muscles. Тематические файлы
-остаются глубокими справочниками, но новое поведение core должно отражаться
+остаются глубокими справочниками, но новое поведение ядра должно отражаться
 здесь и в английской версии.
 
-## Что Даёт Muscles Core
+## Что дает ядро Muscles
 
-`muscles` - общий core-пакет экосистемы Muscles. В нём находятся:
+`muscles` - общий пакет ядра экосистемы Muscles. В нём находятся:
 
 - жизненный цикл приложения;
-- конфигурация и helpers runtime mode;
-- dependency injection;
-- контракты context и strategy;
-- schemas, fields, value objects и OpenAPI metadata;
+- конфигурация и помощники режима выполнения;
+- внедрение зависимостей;
+- контракты контекста и стратегий;
+- схемы, поля, value objects и метаданные OpenAPI;
 - общее дерево маршрутов (`Itinerary`);
-- helpers нормализации response;
-- backend framework primitives для ASGI и WSGI runtimes.
+- помощники нормализации ответов;
+- backend-примитивы для ASGI и WSGI.
 
-Пакеты `muscles-asgi`, `muscles-wsgi` и `muscles-cli` проецируют эти core-
-контракты в конкретные протоколы.
+Пакеты `muscles-asgi`, `muscles-wsgi` и `muscles-cli` проецируют эти контракты
+ядра в конкретные протоколы.
 
-## Справочник По Репозиториям Экосистемы
+## Справочник по репозиториям экосистемы
 
-Core намеренно хранит protocol-neutral contracts. Runtime, protocol и
-integration repositories расширяют эти контракты. Используйте эту таблицу как
-быстрый справочник, когда нужно понять, где должно жить поведение.
+Ядро намеренно хранит контракты, не завязанные на конкретный протокол.
+Репозитории рантаймов, протоколов и интеграций расширяют эти контракты.
+Используйте таблицы ниже как быстрый справочник, когда нужно понять, где должно
+жить поведение.
 
-### Runtime И Protocol Extensions
-
-| Репозиторий | Для чего служит | Когда использовать |
-| --- | --- | --- |
-| [`muscles-asgi`](https://github.com/butkoden/muscles-asgi) | ASGI runtime поверх core routing и schemas. | Async HTTP apps, REST API projection, OpenAPI/Swagger UI, typed handler invocation, file uploads, CORS preflight и ASGI `TestClient`. |
-| [`muscles-wsgi`](https://github.com/butkoden/muscles-wsgi) | WSGI runtime поверх core routing и schemas. | Classic WSGI HTTP apps, pages/templates, static files, REST API projection, OpenAPI/Swagger UI, uploads и CORS preflight. |
-| [`muscles-cli`](https://github.com/butkoden/muscles-cli) | CLI projection той же application model. | Command/group routing, local developer tools и project scaffolding на основе golden path. |
-| [`muscles-jsonrpc`](https://github.com/butkoden/muscles-jsonrpc) | JSON-RPC protocol projection. | Публикация core actions и application contracts как JSON-RPC methods. |
-| [`muscles-sse`](https://github.com/butkoden/muscles-sse) | Server-Sent Events projection. | Streaming action results и protocol-specific SSE delivery. |
-| [`muscles-mcp`](https://github.com/butkoden/muscles-mcp) | MCP projection. | Публикация core application actions как MCP tools. |
-
-### Data, Observability И Integration Extensions
+### Рантаймы и протокольные расширения
 
 | Репозиторий | Для чего служит | Когда использовать |
 | --- | --- | --- |
-| [`muscles-sql`](https://github.com/butkoden/muscles-sql) | SQL-oriented persistence extension. | Database integration и persistence patterns, которые не должны жить в protocol runtimes. |
-| [`muscles-otel`](https://github.com/butkoden/muscles-otel) | Observability extension. | OpenTelemetry-style instrumentation, traces и metrics вокруг core/runtime behavior. |
+| [`muscles-asgi`](https://github.com/butkoden/muscles-asgi) | ASGI-рантайм поверх маршрутизации и схем ядра. | Асинхронные HTTP-приложения, REST API, OpenAPI/Swagger UI, типизированный вызов обработчиков, загрузки файлов, CORS preflight и ASGI `TestClient`. |
+| [`muscles-wsgi`](https://github.com/butkoden/muscles-wsgi) | WSGI-рантайм поверх маршрутизации и схем ядра. | Классические WSGI-приложения, страницы и шаблоны, статические файлы, REST API, OpenAPI/Swagger UI, загрузки файлов и CORS preflight. |
+| [`muscles-cli`](https://github.com/butkoden/muscles-cli) | CLI-проекция той же модели приложения. | Маршрутизация команд и групп, локальные инструменты разработчика и генерация структуры проекта по golden path. |
+| [`muscles-jsonrpc`](https://github.com/butkoden/muscles-jsonrpc) | JSON-RPC-проекция. | Публикация действий ядра и контрактов приложения как JSON-RPC-методов. |
+| [`muscles-sse`](https://github.com/butkoden/muscles-sse) | Проекция Server-Sent Events. | Потоковая доставка результатов действий через SSE. |
+| [`muscles-mcp`](https://github.com/butkoden/muscles-mcp) | MCP-проекция. | Публикация действий приложения как MCP-инструментов. |
 
-### Examples, Compatibility И Support Repositories
+### Данные, наблюдаемость и интеграции
 
 | Репозиторий | Для чего служит | Когда использовать |
 | --- | --- | --- |
-| [`muscular-example`](https://github.com/butkoden/muscular-example) | Example application. | Посмотреть, как core, runtime и extension packages собираются в приложение. |
-| [`muscles-benchmarks`](https://github.com/butkoden/muscles-benchmarks) | Benchmark workspace. | Измерение routing, DI и runtime performance changes. |
-| [`muscles-landing`](https://github.com/butkoden/muscles-landing) | Public landing/docs site. | Product-facing documentation и website presentation. |
-| [`muscular-asgi`](https://github.com/butkoden/muscular-asgi) | Compatibility/legacy ASGI package. | Historical compatibility checks, пока экосистема сходится на `muscles-asgi`. |
+| [`muscles-sql`](https://github.com/butkoden/muscles-sql) | SQL-расширение для хранения данных. | Интеграция с базами данных и паттерны хранения, которые не должны жить внутри протокольных рантаймов. |
+| [`muscles-otel`](https://github.com/butkoden/muscles-otel) | Расширение для наблюдаемости. | Инструментация в стиле OpenTelemetry, трассировки и метрики вокруг ядра и рантаймов. |
 
-Когда добавляется core feature, здесь нужно описывать protocol-neutral contract,
-а runtime-specific examples добавлять в репозиторий расширения, который этот
-контракт исполняет.
+### Примеры, совместимость и поддерживающие репозитории
+
+| Репозиторий | Для чего служит | Когда использовать |
+| --- | --- | --- |
+| [`muscular-example`](https://github.com/butkoden/muscular-example) | Пример приложения. | Посмотреть, как ядро, рантаймы и расширения собираются в одно приложение. |
+| [`muscles-benchmarks`](https://github.com/butkoden/muscles-benchmarks) | Рабочая область для бенчмарков. | Измерение производительности маршрутизации, DI и изменений в рантаймах. |
+| [`muscles-landing`](https://github.com/butkoden/muscles-landing) | Публичный сайт документации и продукта. | Продуктовая документация и сайт проекта. |
+| [`muscular-asgi`](https://github.com/butkoden/muscular-asgi) | Устаревший ASGI-пакет для совместимости. | Исторические проверки совместимости, пока экосистема сходится на `muscles-asgi`. |
+
+Когда добавляется новая функция ядра, здесь нужно описывать независимый от
+протокола контракт, а примеры для конкретного рантайма добавлять в репозиторий
+расширения, который этот контракт исполняет.
 
 ## Установка
 
-Текущий канонический способ установки - GitHub source install:
+Текущий канонический способ установки - установка из GitHub-репозитория:
 
 ```bash
 pip install git+https://github.com/butkoden/muscles.git
 ```
 
-Для web/API runtime используйте отдельные runtime-пакеты:
+Для web/API-приложений используйте отдельные рантайм-пакеты:
 
 ```bash
 pip install git+https://github.com/butkoden/muscles-asgi.git
@@ -94,13 +95,13 @@ class App(metaclass=ApplicationMeta):
         return self.context.execute(*args, shutup=True)
 ```
 
-`Context` отвечает за выполнение runtime и lifecycle hooks. Strategy-пакеты
-решают, как перевести внешний input в этот общий application contract.
+`Context` отвечает за выполнение рантайма и хуки жизненного цикла. Пакеты
+стратегий решают, как перевести внешний ввод в общий контракт приложения.
 
 Подробнее: [architecture.md](architecture.md), [context.md](context.md),
 [instance.md](instance.md).
 
-## Golden Path Структура Проекта
+## Структура проекта Golden Path
 
 Рекомендуемая структура приложения:
 
@@ -119,19 +120,20 @@ app/
 tests/
 ```
 
-HTTP, CLI и другие entry handlers должны оставаться тонкими. Общую бизнес-
-логику держите в domain services и value objects.
+HTTP, CLI и другие входные обработчики должны оставаться тонкими. Общую
+бизнес-логику держите в доменных сервисах и объектах-значениях.
 
 Подробнее: [golden-path.md](golden-path.md),
 [golden-tutorial.md](golden-tutorial.md).
 
-## Routing И API Modules
+## Маршрутизация и API-модули
 
-`Itinerary` - core route tree. Он регистрирует маршруты, матчинг путей, сборку
-URL и хранение route metadata. Runtime-пакеты используют эту структуру для HTTP
-routes, REST controllers, static routes и CLI command trees.
+`Itinerary` - дерево маршрутов ядра. Он регистрирует маршруты, сопоставляет
+пути, собирает URL и хранит метаданные маршрутов. Рантайм-пакеты используют
+эту структуру для HTTP-маршрутов, REST-контроллеров, статических маршрутов и
+деревьев CLI-команд.
 
-Route groups добавляют общий prefix и metadata:
+Группы маршрутов добавляют общий префикс и метаданные:
 
 ```python
 from muscles import Itinerary, BearerAuthSecurity
@@ -152,15 +154,15 @@ def show_document(request, id):
     return {"id": id}
 ```
 
-ASGI и WSGI OpenAPI builders используют metadata группы для tags, security и
-common responses.
+Сборщики OpenAPI в ASGI и WSGI используют метаданные группы для `tags`,
+`security` и общих `responses`.
 
 Подробнее: [backend-framework.md](backend-framework.md).
 
-## Middleware, Guards И CORS
+## Middleware, guards и CORS
 
 `use()` регистрирует middleware. Middleware получает `(request, call_next)` и
-возвращает response:
+возвращает ответ:
 
 ```python
 def audit_middleware(request, call_next):
@@ -171,7 +173,7 @@ def audit_middleware(request, call_next):
 api.use(audit_middleware)
 ```
 
-`guard()` регистрирует route guard по path pattern:
+`guard()` регистрирует проверку маршрута по шаблону пути:
 
 ```python
 def require_auth(request):
@@ -193,13 +195,13 @@ api.use(cors(
 ))
 ```
 
-ASGI и WSGI runtimes используют один и тот же CORS middleware для обычных
-ответов и `OPTIONS` preflight responses.
+ASGI и WSGI используют один и тот же CORS middleware для обычных ответов и
+`OPTIONS` preflight-ответов.
 
-## Auth И Error Mapping
+## Аутентификация и сопоставление ошибок
 
-`BearerAuthSecurity` описывает HTTP bearer auth для OpenAPI. `BearerJwtAuth`
-добавляет небольшой HS256 JWT provider:
+`BearerAuthSecurity` описывает HTTP bearer-аутентификацию для OpenAPI.
+`BearerJwtAuth` добавляет небольшой HS256 JWT-провайдер:
 
 ```python
 from muscles import BearerJwtAuth
@@ -209,23 +211,23 @@ token = jwt_auth.issue({"sub": "user-1"})
 auth_result = jwt_auth.authenticate_header(f"Bearer Bearer {token}")
 ```
 
-`authenticate_header()` принимает дублирующийся bearer prefix для совместимости
-с legacy clients и возвращает `payload`, `token` и `user`. У возвращаемого user
-есть `uid`, взятый из настроенного subject claim.
+`authenticate_header()` принимает дублирующийся bearer-префикс для
+совместимости с legacy-клиентами и возвращает `payload`, `token` и `user`.
+У возвращаемого `user` есть `uid`, взятый из настроенного claim `subject`.
 
-Domain exceptions можно привязать к HTTP statuses:
+Доменные исключения можно привязать к HTTP-статусам:
 
 ```python
 api.map_error(PermissionError, status=403)
 api.map_error(ValueError, status=422)
 ```
 
-ASGI и WSGI сохраняют mapped statuses, когда handler выбрасывает mapped
-exception.
+ASGI и WSGI сохраняют назначенные статусы, когда handler выбрасывает
+сопоставленное исключение.
 
-## Responses
+## Ответы
 
-Core response helpers нормализуются runtime-пакетами:
+Помощники ответов ядра нормализуются рантайм-пакетами:
 
 ```python
 from muscles import BytesResponse, FileResponse, JsonResponse, NoContentResponse
@@ -236,13 +238,12 @@ return BytesResponse(b"PNG", content_type="image/png")
 return FileResponse("/tmp/report.pdf", as_attachment=True)
 ```
 
-`None` превращается в `204 No Content`, mappings - в JSON, strings - в HTML,
+`None` превращается в `204 No Content`, mappings - в JSON, строки - в HTML,
 bytes - в `application/octet-stream`.
 
-## Schemas, Models И OpenAPI
+## Схемы, модели и OpenAPI
 
-Schema classes описывают данные один раз и переиспользуются runtime-
-проекциями:
+Классы схем описывают данные один раз и переиспользуются рантайм-проекциями:
 
 ```python
 from muscles import Column, Key, Model, String
@@ -253,14 +254,14 @@ class Document(Model):
     title = Column(String, required=True)
 ```
 
-Request bodies, response bodies и parameters используются ASGI и WSGI OpenAPI
-builders.
+Тела запросов, тела ответов и параметры используются сборщиками OpenAPI в ASGI
+и WSGI.
 
 Подробнее: [schema.md](schema.md).
 
-## Dependency Injection
+## Внедрение зависимостей
 
-Core DI строится на `Dependency`, `DependencyStorage` и `inject()`:
+DI ядра строится на `Dependency`, `DependencyStorage` и `inject()`:
 
 ```python
 from muscles import Dependency
@@ -275,45 +276,46 @@ class Store(StoreInterface):
     pass
 ```
 
-Runtime handler pipelines могут резолвить аннотированные зависимости из этого
-core-контейнера.
+Рантаймы могут получать аннотированные зависимости из этого контейнера ядра при
+вызове обработчиков.
 
 Подробнее: [dependency.md](dependency.md).
 
-## Конфигурация И Runtime Mode
+## Конфигурация и режим выполнения
 
-`Configurator` читает конфигурацию проекта. Runtime mode helpers задают
-поведение для development, test и production.
+`Configurator` читает конфигурацию проекта. Помощники режима выполнения задают
+поведение для разработки, тестов и продакшена.
 
 Подробнее: [configure.md](configure.md).
 
-## Actions
+## Действия (Actions)
 
-Core actions - protocol-neutral contracts. Их можно проецировать в HTTP, CLI,
-MCP, JSON-RPC, SSE и другие runtime layers через `ActionDispatcher`.
+Действия ядра (`Actions`) - контракты, не завязанные на конкретный протокол.
+Их можно проецировать в HTTP, CLI, MCP, JSON-RPC, SSE и другие рантайм-слои
+через `ActionDispatcher`.
 
 Подробнее:
 
 - [action-contract.en.md](action-contract.en.md)
 - [action-contract.ru.md](action-contract.ru.md)
 
-## Тестирование Core Из Исходников
+## Тестирование ядра из исходников
 
-Из core-репозитория:
+Из репозитория ядра:
 
 ```bash
 PYTHONPATH=src python3 -m pytest
 ```
 
-Для ecosystem packages из соседних checkout:
+Для пакетов экосистемы из соседних локальных копий:
 
 ```bash
 PYTHONPATH=../muscles/src:src python3 -m pytest
 ```
 
-## Глубокие Справочники
+## Глубокие справочники
 
-- Документация runtime-репозиториев:
+- Документация рантайм-репозиториев:
   - [`muscles-asgi`](https://github.com/butkoden/muscles-asgi)
   - [`muscles-wsgi`](https://github.com/butkoden/muscles-wsgi)
   - [`muscles-cli`](https://github.com/butkoden/muscles-cli)
