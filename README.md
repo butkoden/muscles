@@ -27,6 +27,11 @@ Installation matrix:
 
 More detail: [docs/installation.md](docs/installation.md).
 
+Core documentation:
+
+- English: [docs/doc.md](docs/doc.md)
+- Russian: [docs/doc.ru.md](docs/doc.ru.md)
+
 ## Naming
 
 Use `Muscles` as the public framework name. Keep `muscles` for the Python

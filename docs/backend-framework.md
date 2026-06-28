@@ -1,8 +1,20 @@
 # Backend Framework Primitives
 
+Language: English  
+Russian version: [backend-framework.ru.md](backend-framework.ru.md)
+
 Muscles core provides shared backend primitives used by ASGI and WSGI runtimes.
 The goal is to keep route metadata, security and response contracts in one
 place instead of patching each transport separately.
+
+Runtime implementations:
+
+- [`muscles-asgi`](https://github.com/butkoden/muscles-asgi) executes these
+  primitives in ASGI, including typed handler arguments, guards, security,
+  CORS preflight, OpenAPI projection and `TestClient`.
+- [`muscles-wsgi`](https://github.com/butkoden/muscles-wsgi) executes the same
+  primitives in WSGI, including typed handler arguments, guards, security,
+  CORS preflight and OpenAPI projection.
 
 ## Route Groups
 
