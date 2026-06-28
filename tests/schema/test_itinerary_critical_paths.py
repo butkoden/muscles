@@ -64,6 +64,97 @@ def test_error_handler_priority_and_default():
     assert itinerary.get_current_error_handler(Err(500))["handler"] is default_handler
 
 
+def test_error_handler_can_map_exception_type_to_status():
+    itinerary = _make_itinerary("critical-error-type-map")
+
+    def value_error_handler(err, request):
+        return "value"
+
+    itinerary.map_error(ValueError, status=422, handler=value_error_handler)
+
+    current = itinerary.get_current_error_handler(ValueError("bad"))
+
+    assert current["handler"] is value_error_handler
+    assert current["code"] == 422
+
+
+def test_group_inherits_route_metadata():
+    itinerary = _make_itinerary("critical-group-metadata")
+    group = itinerary.group("/api/documents", tags=["Documents"], security=["Bearer"], response={401: "error"})
+
+    @group.init("/{id}", method="get", summary="Show document")
+    def show(request, id):
+        return id
+
+    route, params = itinerary.get_current_route(Request("/api/documents/42", method="GET"))
+
+    assert route is not None
+    assert params == {"id": "42"}
+    assert route["handler"].__name__ == show.__name__
+    assert route["handler"].tags == ["Documents"]
+    assert route["handler"].security == ["Bearer"]
+    assert route["handler"].response == {401: "error"}
+    assert route["handler"].summary == "Show document"
+
+
+def test_guard_selects_path_by_prefix_and_exclusions():
+    itinerary = _make_itinerary("critical-guard")
+    guard = lambda request: None
+
+    itinerary.guard("/api/**", guard, except_=["/api/public/**"])
+
+    private = Request("/api/documents")
+    public = Request("/api/public/ping")
+
+    assert itinerary.get_guards(private) == [guard]
+    assert itinerary.get_guards(public) == []
+
+
+def test_endpoint_auth_false_overrides_group_security_and_matching_guards():
+    itinerary = _make_itinerary("critical-route-auth-override")
+    guard = lambda request: {"error": "unauthorized"}, 401
+    group = itinerary.group("/api", security=["Bearer"])
+
+    itinerary.guard("/api/**", guard)
+
+    @group.init("/login", method="post", auth=False)
+    def login(request):
+        return {"ok": True}
+
+    request = Request("/api/login", method="POST")
+    route, params = itinerary.get_current_route(request)
+    request.route = route
+
+    assert params == {}
+    assert route["handler"].auth is False
+    assert route["handler"].security == []
+    assert itinerary.is_auth_disabled(route) is True
+    assert itinerary.get_guards(request) == []
+
+
+def test_endpoint_auth_list_replaces_inherited_group_security():
+    itinerary = _make_itinerary("critical-route-auth-replace")
+    group = itinerary.group("/api", security=["Bearer"])
+
+    @group.init("/service-token", method="get", auth=["ApiKey"])
+    def service_token(request):
+        return {"ok": True}
+
+    route, _ = itinerary.get_current_route(Request("/api/service-token", method="GET"))
+
+    assert route["handler"].auth == ["ApiKey"]
+    assert route["handler"].security == ["ApiKey"]
+
+
+def test_use_registers_global_middleware():
+    itinerary = _make_itinerary("critical-middleware")
+    middleware = lambda request, call_next: call_next(request)
+
+    itinerary.use(middleware)
+
+    assert itinerary.get_middlewares() == [middleware]
+
+
 def test_static_prefix_resolution():
     itinerary = _make_itinerary("critical-static-prefix")
     marker = object()

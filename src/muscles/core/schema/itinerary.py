@@ -7,8 +7,10 @@ from collections import defaultdict
 from functools import wraps
 from abc import ABC
 from urllib.parse import unquote
+from fnmatch import fnmatch
 
 from ..exceptions import ApplicationException, AccessDeniedException
+from ..route_contract import normalize_path
 from .schema import Schema
 from .security import BaseSecurity
 from .user import GuestUser
@@ -35,6 +37,67 @@ def _parse_route_chunk(chunk: str):
         name, sep, rule_name = body.partition(':')
         return f"{{{name}:{rule_name or 'var'}}}", name, (rule_name or "var"), True
     return chunk, False, "default", False
+
+
+def _merge_metadata(parent_value, child_value):
+    if child_value not in (None, [], {}, ""):
+        if isinstance(parent_value, list) and isinstance(child_value, list):
+            return [*parent_value, *[item for item in child_value if item not in parent_value]]
+        if isinstance(parent_value, dict) and isinstance(child_value, dict):
+            merged = dict(parent_value)
+            merged.update(child_value)
+            return merged
+        return child_value
+    return parent_value
+
+
+def _path_matches(pattern: str, path: str) -> bool:
+    pattern = normalize_path(pattern)
+    path = normalize_path(path)
+    if pattern.endswith("/**"):
+        prefix = pattern[:-3]
+        return path == prefix or path.startswith(f"{prefix}/")
+    return fnmatch(path, pattern)
+
+
+def _auth_security(auth):
+    if auth is False or auth is None:
+        return []
+    if isinstance(auth, list):
+        return auth
+    return [auth]
+
+
+class RouteGroup:
+    def __init__(self, itinerary, prefix: str, **metadata):
+        self.itinerary = itinerary
+        self.prefix = normalize_path(prefix)
+        self.metadata = metadata
+
+    def _route(self, route: str) -> str:
+        return normalize_path(self.prefix, route)
+
+    def _kwargs(self, kwargs: dict) -> dict:
+        merged = dict(kwargs)
+        for key, value in self.metadata.items():
+            merged[key] = _merge_metadata(value, merged.get(key))
+        return merged
+
+    def init(self, route, *args, **kwargs):
+        return self.itinerary.init(self._route(route), *args, **self._kwargs(kwargs))
+
+    def action(self, *args, route=None, **kwargs):
+        return self.itinerary.action(*args, route=self._route(route or "/"), **self._kwargs(kwargs))
+
+    def controller(self, route, *args, **kwargs):
+        return self.itinerary.controller(self._route(route), *args, **self._kwargs(kwargs))
+
+    def group(self, prefix: str, **metadata):
+        merged = dict(self.metadata)
+        for key, value in metadata.items():
+            merged[key] = _merge_metadata(merged.get(key), value)
+        return RouteGroup(self.itinerary, self._route(prefix), **merged)
+
 
 class Itinerary:
     """
@@ -72,8 +135,12 @@ class Itinerary:
             instance.static_map = []
             instance._routes_by_key = defaultdict(list)
             instance._error_handlers_by_code = {}
+            instance._error_handlers_by_exception = {}
+            instance._error_status_by_exception = {}
             instance._default_error_handler = None
             instance._match_cache = {}
+            instance._middlewares = []
+            instance._guards = []
             cls._instances[instance_name] = instance
         return cls._instances[instance_name]
 
@@ -124,6 +191,44 @@ class Itinerary:
         """
         if not any(item.name == rule.name for item in self.rules):
             self.rules.append(rule)
+
+    def group(self, prefix: str, **metadata):
+        return RouteGroup(self, prefix, **metadata)
+
+    def use(self, middleware):
+        self._middlewares.append(middleware)
+        return middleware
+
+    def get_middlewares(self):
+        return list(self._middlewares)
+
+    def guard(self, pattern: str, handler, except_: list[str] = None):
+        self._guards.append({
+            "pattern": pattern,
+            "handler": handler,
+            "except": except_ or [],
+        })
+        return handler
+
+    def get_guards(self, request_or_path):
+        path = request_or_path if isinstance(request_or_path, str) else getattr(request_or_path, "path", "/")
+        route = None if isinstance(request_or_path, str) else getattr(request_or_path, "route", None)
+        if self.is_auth_disabled(route):
+            return []
+        handlers = []
+        for guard in self._guards:
+            if not _path_matches(guard["pattern"], path):
+                continue
+            if any(_path_matches(pattern, path) for pattern in guard["except"]):
+                continue
+            handlers.append(guard["handler"])
+        return handlers
+
+    def is_auth_disabled(self, route_or_handler):
+        if route_or_handler is None:
+            return False
+        handler = route_or_handler.get("handler") if isinstance(route_or_handler, dict) else route_or_handler
+        return getattr(handler, "auth", None) is False
 
     def to_url(self, route_key, params):
         """
@@ -271,6 +376,8 @@ class Itinerary:
         return None
 
     def _trigger_set_handler(self, handler, *args, **kwargs):
+        if "auth" in kwargs and kwargs["auth"] is not None:
+            kwargs["security"] = _auth_security(kwargs["auth"])
         handler.is_action = kwargs.get('is_action', False)
         handler.key = kwargs.get('key')
         handler.module = kwargs.get('module')
@@ -279,6 +386,12 @@ class Itinerary:
         handler.redirect = kwargs.get('redirect')
         handler.route = kwargs.get('route', '/')
         handler.model = kwargs.get('model')
+        for key, value in kwargs.items():
+            if key.startswith("_"):
+                continue
+            if value in (None, [], {}, "") and hasattr(handler, key):
+                continue
+            setattr(handler, key, value)
         return handler
 
     def _trigger_set_controller(self, handler, *args, **kwargs):
@@ -544,6 +657,14 @@ class Itinerary:
         else:
             self._error_handlers_by_code[code] = handler
 
+    def map_error(self, exception, status=500, handler=None):
+        if not inspect.isclass(exception) or not issubclass(exception, BaseException):
+            raise TypeError("exception must be an Exception subclass")
+        self._error_status_by_exception[exception] = status
+        if handler is not None:
+            self._error_handlers_by_exception[exception] = handler
+        return handler
+
     def error_handler(self, code=None):
         """
         Декоратор функции ошибки
@@ -564,6 +685,15 @@ class Itinerary:
             return wrapper
 
         return decorator
+
+    def _find_exception_error_mapping(self, error):
+        for exception in type(error).mro():
+            if exception in self._error_status_by_exception or exception in self._error_handlers_by_exception:
+                return (
+                    self._error_status_by_exception.get(exception),
+                    self._error_handlers_by_exception.get(exception),
+                )
+        return None, None
 
     def get_current_route(self, request):
         """
@@ -601,9 +731,16 @@ class Itinerary:
         :return:
         """
 
-        handler = self._error_handlers_by_code.get(error.status)
+        status, handler = self._find_exception_error_mapping(error) if isinstance(error, BaseException) else (None, None)
+        if status is not None and not hasattr(error, "status"):
+            error.status = status
         if handler:
-            return {"code": error.status, "handler": handler}
+            return {"code": status, "handler": handler}
+
+        status = status or getattr(error, "status", None)
+        handler = self._error_handlers_by_code.get(status)
+        if handler:
+            return {"code": status, "handler": handler}
         if self._default_error_handler:
             return {"code": None, "handler": self._default_error_handler}
         return None

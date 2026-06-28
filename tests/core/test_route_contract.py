@@ -5,6 +5,10 @@ def test_normalize_path_merges_fragments():
     assert normalize_path("", "/", "api", "v1") == "/api/v1"
 
 
+def test_normalize_path_collapses_duplicate_separators():
+    assert normalize_path("//api//documents//") == "/api/documents"
+
+
 def test_build_route_aliases_contains_canonical_and_compatibility_aliases():
     payload = build_route_aliases(prefix="/api", schema_url="schema", swagger_url="/swagger", openapi_url="/openapi.json", docs_url="/docs")
     assert payload["canonical"]["openapi"] == "/api/openapi.json"

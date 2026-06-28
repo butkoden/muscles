@@ -22,6 +22,7 @@ __all__ = (
     "BasicAuthSecurity",
     "ApiKeyAuthSecurity",
     "BearerAuthSecurity",
+    "BearerJwtAuth",
     "Swagger",
     "Schema",
     "ModelStorage",
