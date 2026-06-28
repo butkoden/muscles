@@ -52,6 +52,7 @@ def test_BearerJwtAuth_issue_and_authenticate():
     result = auth.authenticate_header(f"Bearer Bearer {token}")
 
     assert result["payload"]["sub"] == "user-1"
+    assert result["user"].uid == "user-1"
     assert result["user"].token == token
     assert str(result["user"].uuid)
 

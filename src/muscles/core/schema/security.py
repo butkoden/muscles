@@ -143,8 +143,10 @@ class BearerJwtAuth(BearerAuthSecurity):
         payload = self.decode(token)
         if payload is None:
             return None
+        user = User(token=token, name=payload.get("name") or payload.get(self.subject), rules=payload)
+        user.uid = payload.get(self.subject)
         return {
             "payload": payload,
             "token": token,
-            "user": User(token=token, name=payload.get(self.subject), rules=payload),
+            "user": user,
         }

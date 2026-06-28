@@ -125,6 +125,10 @@ name, which keeps repeated imports from making routing slower.
 
 More detail: [docs/architecture.md](docs/architecture.md).
 
+Backend primitives such as route groups, guards, middleware, exception mapping,
+Bearer JWT auth, CORS and response helpers are documented in
+[docs/backend-framework.md](docs/backend-framework.md).
+
 ## Schemas And OpenAPI
 
 Schema classes (`Model`, `Collection`, `Column`, `String`, `Key`, request and
