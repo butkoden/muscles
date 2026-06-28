@@ -32,30 +32,54 @@
 
 ### Рантаймы и протокольные расширения
 
-| Репозиторий | Для чего служит | Когда использовать |
-| --- | --- | --- |
-| [`muscles-asgi`](https://github.com/butkoden/muscles-asgi) | ASGI-рантайм поверх маршрутизации и схем ядра. | Асинхронные HTTP-приложения, REST API, OpenAPI/Swagger UI, типизированный вызов обработчиков, загрузки файлов, CORS preflight и ASGI `TestClient`. |
-| [`muscles-wsgi`](https://github.com/butkoden/muscles-wsgi) | WSGI-рантайм поверх маршрутизации и схем ядра. | Классические WSGI-приложения, страницы и шаблоны, статические файлы, REST API, OpenAPI/Swagger UI, загрузки файлов и CORS preflight. |
-| [`muscles-cli`](https://github.com/butkoden/muscles-cli) | CLI-проекция той же модели приложения. | Маршрутизация команд и групп, локальные инструменты разработчика и генерация структуры проекта по golden path. |
-| [`muscles-jsonrpc`](https://github.com/butkoden/muscles-jsonrpc) | JSON-RPC-проекция. | Публикация действий ядра и контрактов приложения как JSON-RPC-методов. |
-| [`muscles-sse`](https://github.com/butkoden/muscles-sse) | Проекция Server-Sent Events. | Потоковая доставка результатов действий через SSE. |
-| [`muscles-mcp`](https://github.com/butkoden/muscles-mcp) | MCP-проекция. | Публикация действий приложения как MCP-инструментов. |
+[`muscles-asgi`](https://github.com/butkoden/muscles-asgi) - ASGI-рантайм
+поверх маршрутизации и схем ядра. Используйте его для асинхронных
+HTTP-приложений, REST API, OpenAPI/Swagger UI, типизированного вызова
+обработчиков, загрузки файлов, CORS preflight и ASGI `TestClient`.
+
+[`muscles-wsgi`](https://github.com/butkoden/muscles-wsgi) - WSGI-рантайм
+поверх маршрутизации и схем ядра. Используйте его для классических
+WSGI-приложений, страниц и шаблонов, статических файлов, REST API,
+OpenAPI/Swagger UI, загрузки файлов и CORS preflight.
+
+[`muscles-cli`](https://github.com/butkoden/muscles-cli) проецирует ту же
+модель приложения в CLI-команды. Используйте его для маршрутизации команд и
+групп, локальных инструментов разработчика и генерации структуры проекта по
+golden path.
+
+[`muscles-jsonrpc`](https://github.com/butkoden/muscles-jsonrpc) публикует
+действия ядра и контракты приложения как JSON-RPC-методы.
+
+[`muscles-sse`](https://github.com/butkoden/muscles-sse) доставляет потоковые
+результаты действий через Server-Sent Events.
+
+[`muscles-mcp`](https://github.com/butkoden/muscles-mcp) публикует действия
+приложения как MCP-инструменты.
 
 ### Данные, наблюдаемость и интеграции
 
-| Репозиторий | Для чего служит | Когда использовать |
-| --- | --- | --- |
-| [`muscles-sql`](https://github.com/butkoden/muscles-sql) | SQL-расширение для хранения данных. | Интеграция с базами данных и паттерны хранения, которые не должны жить внутри протокольных рантаймов. |
-| [`muscles-otel`](https://github.com/butkoden/muscles-otel) | Расширение для наблюдаемости. | Инструментация в стиле OpenTelemetry, трассировки и метрики вокруг ядра и рантаймов. |
+[`muscles-sql`](https://github.com/butkoden/muscles-sql) - SQL-расширение для
+хранения данных. Используйте его для интеграции с базами данных и паттернов
+хранения, которые не должны жить внутри протокольных рантаймов.
+
+[`muscles-otel`](https://github.com/butkoden/muscles-otel) - расширение для
+наблюдаемости. Используйте его для OpenTelemetry-инструментации, трассировок и
+метрик вокруг ядра и рантаймов.
 
 ### Примеры, совместимость и поддерживающие репозитории
 
-| Репозиторий | Для чего служит | Когда использовать |
-| --- | --- | --- |
-| [`muscular-example`](https://github.com/butkoden/muscular-example) | Пример приложения. | Посмотреть, как ядро, рантаймы и расширения собираются в одно приложение. |
-| [`muscles-benchmarks`](https://github.com/butkoden/muscles-benchmarks) | Рабочая область для бенчмарков. | Измерение производительности маршрутизации, DI и изменений в рантаймах. |
-| [`muscles-landing`](https://github.com/butkoden/muscles-landing) | Публичный сайт документации и продукта. | Продуктовая документация и сайт проекта. |
-| [`muscular-asgi`](https://github.com/butkoden/muscular-asgi) | Устаревший ASGI-пакет для совместимости. | Исторические проверки совместимости, пока экосистема сходится на `muscles-asgi`. |
+[`muscular-example`](https://github.com/butkoden/muscular-example) - пример
+приложения, в котором видно, как ядро, рантаймы и расширения собираются вместе.
+
+[`muscles-benchmarks`](https://github.com/butkoden/muscles-benchmarks) -
+рабочая область для бенчмарков маршрутизации, DI и изменений в рантаймах.
+
+[`muscles-landing`](https://github.com/butkoden/muscles-landing) содержит
+публичный сайт продукта и документации.
+
+[`muscular-asgi`](https://github.com/butkoden/muscular-asgi) - устаревший
+ASGI-пакет для совместимости и исторических проверок, пока экосистема сходится
+на `muscles-asgi`.
 
 Когда добавляется новая функция ядра, здесь нужно описывать независимый от
 протокола контракт, а примеры для конкретного рантайма добавлять в репозиторий
