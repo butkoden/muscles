@@ -4,8 +4,10 @@ from collections.abc import Mapping
 from typing import Any
 
 from .base import BaseResponse
+from .bytes import BytesResponse
 from .html import HtmlResponse
 from .json import JsonResponse
+from .no_content import NoContentResponse
 
 
 def normalize_response(value: Any, request=None) -> BaseResponse:
@@ -28,11 +30,11 @@ def normalize_response(value: Any, request=None) -> BaseResponse:
         raise ValueError("Tuple response must be (body, status) or (body, status, headers)")
 
     if isinstance(value, bytes):
-        return BaseResponse(body=value, status=200, headers={}, content_type="application/octet-stream").with_content_length()
+        return BytesResponse(body=value).with_content_length()
     if isinstance(value, str):
         return HtmlResponse(body=value).with_content_length()
     if isinstance(value, Mapping):
         return JsonResponse(body=dict(value)).with_content_length()
     if value is None:
-        return BaseResponse(body=b"", status=204, headers={}, content_type="application/octet-stream").with_content_length()
+        return NoContentResponse().with_content_length()
     return BaseResponse(body=str(value).encode("utf-8"), status=200, headers={}, content_type="text/plain; charset=utf-8").with_content_length()

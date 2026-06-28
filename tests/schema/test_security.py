@@ -4,6 +4,7 @@ from muscles.core.schema import Key
 from muscles.core.schema import BasicAuthSecurity
 from muscles.core.schema import ApiKeyAuthSecurity
 from muscles.core.schema import BearerAuthSecurity
+from muscles.core.schema import BearerJwtAuth
 
 
 def test_BasicAuthSecurity():
@@ -39,8 +40,24 @@ def test_BearerAuthSecurity():
     assert r.dump() == {
         'Bearer': {
             'type': 'http',
-            'scheme': 'basic'
+            'scheme': 'bearer'
         }
     }
 
 
+def test_BearerJwtAuth_issue_and_authenticate():
+    auth = BearerJwtAuth(secret="secret", subject="sub")
+    token = auth.issue({"sub": "user-1", "name": "Denis"})
+
+    result = auth.authenticate_header(f"Bearer Bearer {token}")
+
+    assert result["payload"]["sub"] == "user-1"
+    assert result["user"].token == token
+    assert str(result["user"].uuid)
+
+
+def test_BearerJwtAuth_rejects_invalid_token():
+    auth = BearerJwtAuth(secret="secret")
+
+    assert auth.extract_token("Basic x") is None
+    assert auth.authenticate_header("Bearer invalid") is None

@@ -21,8 +21,10 @@ CANONICAL_ALIASES = {
 
 def normalize_path(*parts: str) -> str:
     """Build stable absolute path from fragments."""
-    chunks = [str(part or "").strip("/") for part in parts]
-    joined = "/".join(chunk for chunk in chunks if chunk)
+    chunks = []
+    for part in parts:
+        chunks.extend(chunk for chunk in str(part or "").split("/") if chunk)
+    joined = "/".join(chunks)
     if not joined:
         return "/"
     return f"/{joined}"
