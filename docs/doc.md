@@ -23,31 +23,38 @@ reflected here and in the Russian version.
 Runtime packages such as `muscles-asgi`, `muscles-wsgi` and `muscles-cli`
 project these core contracts into concrete protocols.
 
-## Ecosystem Extensions
+## Ecosystem Repository Reference
 
-Core deliberately keeps protocol-neutral contracts. Runtime and integration
-repositories extend those contracts:
+Core deliberately keeps protocol-neutral contracts. Runtime, protocol and
+integration repositories extend those contracts. Use this table as a quick
+navigation reference when deciding where a behavior should live.
 
-- [`muscles-asgi`](https://github.com/butkoden/muscles-asgi) - ASGI runtime,
-  async request/response handling, REST API projection, OpenAPI/Swagger UI,
-  ASGI `TestClient`, file uploads and CORS preflight over core routing.
-- [`muscles-wsgi`](https://github.com/butkoden/muscles-wsgi) - WSGI runtime,
-  request/response handling, page/template support, static files, REST API
-  projection, OpenAPI/Swagger UI, uploads and CORS preflight over core routing.
-- [`muscles-cli`](https://github.com/butkoden/muscles-cli) - CLI projection of
-  the same application model, command/group routing and project scaffolding.
-- [`muscles-sql`](https://github.com/butkoden/muscles-sql) - SQL-oriented
-  persistence extension for applications that need database integration.
-- [`muscles-jsonrpc`](https://github.com/butkoden/muscles-jsonrpc) - JSON-RPC
-  protocol projection for core actions and application contracts.
-- [`muscles-sse`](https://github.com/butkoden/muscles-sse) - Server-Sent Events
-  projection for streaming action results.
-- [`muscles-otel`](https://github.com/butkoden/muscles-otel) - observability
-  extension for OpenTelemetry-style instrumentation.
-- [`muscles-mcp`](https://github.com/butkoden/muscles-mcp) - MCP projection for
-  exposing core application actions as tools.
-- [`muscular-example`](https://github.com/butkoden/muscular-example) - example
-  application that demonstrates how ecosystem packages fit together.
+### Runtime And Protocol Extensions
+
+| Repository | Purpose | Use It For |
+| --- | --- | --- |
+| [`muscles-asgi`](https://github.com/butkoden/muscles-asgi) | ASGI runtime over core routing and schemas. | Async HTTP apps, REST API projection, OpenAPI/Swagger UI, typed handler invocation, file uploads, CORS preflight and ASGI `TestClient`. |
+| [`muscles-wsgi`](https://github.com/butkoden/muscles-wsgi) | WSGI runtime over core routing and schemas. | Classic WSGI HTTP apps, pages/templates, static files, REST API projection, OpenAPI/Swagger UI, uploads and CORS preflight. |
+| [`muscles-cli`](https://github.com/butkoden/muscles-cli) | CLI projection of the same application model. | Command/group routing, local developer tools and project scaffolding based on the golden path. |
+| [`muscles-jsonrpc`](https://github.com/butkoden/muscles-jsonrpc) | JSON-RPC protocol projection. | Exposing core actions and application contracts through JSON-RPC methods. |
+| [`muscles-sse`](https://github.com/butkoden/muscles-sse) | Server-Sent Events projection. | Streaming action results and protocol-specific SSE delivery. |
+| [`muscles-mcp`](https://github.com/butkoden/muscles-mcp) | MCP projection. | Exposing core application actions as MCP tools. |
+
+### Data, Observability And Integration Extensions
+
+| Repository | Purpose | Use It For |
+| --- | --- | --- |
+| [`muscles-sql`](https://github.com/butkoden/muscles-sql) | SQL-oriented persistence extension. | Database integration and persistence patterns that should stay outside protocol runtimes. |
+| [`muscles-otel`](https://github.com/butkoden/muscles-otel) | Observability extension. | OpenTelemetry-style instrumentation, traces and metrics around core/runtime behavior. |
+
+### Examples, Compatibility And Support Repositories
+
+| Repository | Purpose | Use It For |
+| --- | --- | --- |
+| [`muscular-example`](https://github.com/butkoden/muscular-example) | Example application. | Seeing how core, runtime and extension packages fit together in an app. |
+| [`muscles-benchmarks`](https://github.com/butkoden/muscles-benchmarks) | Benchmark workspace. | Measuring routing, DI and runtime performance changes. |
+| [`muscles-landing`](https://github.com/butkoden/muscles-landing) | Public landing/docs site. | Product-facing documentation and website presentation. |
+| [`muscular-asgi`](https://github.com/butkoden/muscular-asgi) | Compatibility/legacy ASGI package. | Historical compatibility checks while the ecosystem converges on `muscles-asgi`. |
 
 When adding a core feature, document the protocol-neutral contract here and add
 runtime-specific examples in the extension repository that executes it.
