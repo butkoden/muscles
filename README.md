@@ -5,6 +5,44 @@ application lifecycle, configuration, shared schema objects, routing tree and
 strategy interface. HTTP, ASGI and CLI packages reuse these primitives instead
 of implementing their own framework model.
 
+## Recommended Application Shape (Canonical Path)
+
+Most projects use this lifecycle:
+
+1. `App` class receives a runtime object (`runtime.strategy`, `runtime.routes`, `runtime.rest_api`).
+2. `Context` is created with `runtime.strategy`.
+3. REST API object is created through `runtime.rest_api(...)`.
+4. Endpoints are registered with `runtime.routes.init(...)` or `api.init(...)`.
+5. Execution goes through `Context.execute(...)`.
+
+```python
+from muscles import ApplicationMeta, Configurator, Context
+from muscles.wsgi import wsgi_app
+
+class App(metaclass=ApplicationMeta):
+    package_paths = []
+    shutup = False
+    config = Configurator(obj={})
+
+    def __init__(self, runtime):
+        self.runtime = runtime
+        self.context = Context(runtime.strategy, params={})
+        self.api = runtime.rest_api(prefix="/api/v1")
+        register_pages(runtime.routes)
+        register_api(self.api, runtime.routes)
+
+    def __call__(self, environ, start_response):
+        self.context.set_param("environ", environ)
+        self.context.set_param("start_response", start_response)
+        return self.context.execute()
+
+
+wsgi_app(App(wsgi_runtime()))
+```
+
+This style keeps runtime-specific glue thin and leaves endpoint modules with the
+behavior and OpenAPI metadata.
+
 ## Packages
 
 - `muscles` - core classes, schemas, routing and application metaclass.
@@ -133,6 +171,13 @@ More detail: [docs/architecture.md](docs/architecture.md).
 Backend primitives such as route groups, guards, middleware, exception mapping,
 Bearer JWT auth, CORS and response helpers are documented in
 [docs/backend-framework.md](docs/backend-framework.md).
+
+`BackendPipeline` is the shared execution contract for runtime adapters. It
+handles typed handler arguments, dependency resolution, guards, route-level
+security and middleware, while ASGI/WSGI keep protocol parsing and response
+serialization. `DependencyContainer` adds explicit `app`, `request` and
+`transient` scopes for integrations that need more structure than legacy global
+dependency registration.
 
 ## Schemas And OpenAPI
 

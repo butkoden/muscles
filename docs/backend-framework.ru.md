@@ -17,6 +17,41 @@
   примитивы в WSGI: типизированные аргументы обработчиков, `guards`, правила
   безопасности, CORS preflight и OpenAPI-проекцию.
 
+## Backend Pipeline
+
+`BackendPipeline` - общий runtime-контракт обработки запроса. Runtime-адаптеры
+передают в него framework request и параметры найденного маршрута, а pipeline
+выполняет:
+
+- сбор типизированных аргументов handler из path params, body, query, headers и cookies;
+- разрешение зависимостей;
+- route guards и переопределение `auth=False`;
+- route-level security providers;
+- middleware, включая CORS middleware.
+
+Транспорты по-прежнему отвечают за разбор протокола и сериализацию ответа. Так
+поведение ASGI и WSGI остается одинаковым без копирования handler-логики в
+каждом runtime.
+
+## Dependency Container
+
+`DependencyContainer` - небольшой контейнер зависимостей со scope уровня
+приложения и запроса:
+
+```python
+from muscles import DependencyContainer
+
+container = DependencyContainer()
+container.register(StoreInterface, SqliteStore, scope="app")
+request_scope = container.create_scope()
+
+store = request_scope.resolve(StoreInterface)
+```
+
+Поддерживаются scope `app`, `request` и `transient`. Существующие регистрации
+через `Dependency(...)` остаются для совместимости; runtime можно постепенно
+переводить на явные контейнеры.
+
 ## Группы маршрутов
 
 `group()` добавляет общий префикс и метаданные для набора маршрутов:
@@ -42,6 +77,22 @@ def show_document(request, id):
 
 Метаданные группы наследуются зарегистрированными обработчиками. Сборщики
 OpenAPI в ASGI и WSGI используют их для `tags`, `security` и общих `responses`.
+
+Маршруты на одном path могут иметь разные ключи для разных HTTP-методов:
+
+```python
+@api.init("/api/documents", key="documents.list", method="get")
+def list_documents(request):
+    return {"items": []}
+
+
+@api.init("/api/documents", key="documents.create", method="post")
+def create_document(request):
+    return {"created": True}
+```
+
+Core itinerary хранит все route records на найденном terminal node и затем
+выбирает обработчик по method и content type.
 
 Для переопределения авторизации на конкретном endpoint используйте `auth`:
 

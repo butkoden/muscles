@@ -60,6 +60,10 @@ def _path_matches(pattern: str, path: str) -> bool:
     return fnmatch(path, pattern)
 
 
+def _route_path_key(route: str) -> str:
+    return normalize_path(route).lower()
+
+
 def _auth_security(auth):
     if auth is False or auth is None:
         return []
@@ -134,6 +138,7 @@ class Itinerary:
             instance.nodes_map = []
             instance.static_map = []
             instance._routes_by_key = defaultdict(list)
+            instance._routes_by_path = defaultdict(list)
             instance._error_handlers_by_code = {}
             instance._error_handlers_by_exception = {}
             instance._error_status_by_exception = {}
@@ -433,6 +438,7 @@ class Itinerary:
         self._match_cache.clear()
         node = self.node
         canonical_route = canonical_route if canonical_route is not None else route
+        created_route_record = None
         if key is None or not key:
             key = '.'.join(tuple(chunks[1:] if chunks[0] == '' else chunks))
         _key, key = key, None
@@ -474,8 +480,12 @@ class Itinerary:
                     }
                     self.nodes_map.append(route_record)
                     self._routes_by_key[key].append(route_record)
+                    self._routes_by_path[_route_path_key(route)].append(route_record)
+                    created_route_record = route_record
             node = node.instance(normalized_chunk, full_route=full_route, key=key, dictionary_key=dictionary_key, rule=rule)
         handler.node = node
+        if created_route_record is not None and created_route_record not in node.route_records:
+            node.route_records.append(created_route_record)
         handler.full_route = full_route
         handler.canonical_route = canonical_route
         handler.aliases = aliases or []
@@ -708,11 +718,12 @@ class Itinerary:
         request_method = request.method.upper()
         request_content_type = request.content_type.lower()
 
+        path_key = _route_path_key(getattr(node, "full_route", None) or "")
+        candidates = getattr(node, "route_records", None) or self._routes_by_path.get(path_key) or self._routes_by_key.get(node.key, [])
+
         def condition(route):
             """condition here"""
             res = True
-            if res and route['key'] and route['key'] != node.key:
-                res = False
             if res and route['method'] and route['method'] != '*' and route['method_upper'] != request_method:
                 res = False
             if res and route['content_type'] and route['content_type'] != '*/*' and \
@@ -720,7 +731,7 @@ class Itinerary:
                 res = False
             return res
 
-        filtered = [route for route in self._routes_by_key.get(node.key, []) if condition(route)]
+        filtered = [route for route in candidates if condition(route)]
         return filtered[0] if len(filtered) > 0 else None, dictionary
 
     def get_current_error_handler(self, error):
@@ -804,6 +815,7 @@ class Node(ABC):
         self.dictionary_key = dictionary_key.lower() if dictionary_key and dictionary_key is not None else None
         self._childrens = []
         self._children_by_route = {}
+        self.route_records = []
         if self.parent is not None:
             self.parent._childrens.append(self)
             self.parent._childrens.sort(key=lambda node: node.weight)
