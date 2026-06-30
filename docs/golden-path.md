@@ -31,6 +31,23 @@ tests/
 - `app/static/`: static assets for web runtime.
 - `tests/`: unit/integration/smoke tests.
 
+### Canonical runtime wiring (minimal API apps)
+
+To make onboarding easier for endpoint-first projects, keep the following
+shape:
+
+```text
+app/
+  application.py       # thin App class + context.execute delegation
+  web.py               # route registration entrypoints
+  composition/
+    runtime.py         # runtime factories (wsgi_runtime / asgi_runtime)
+```
+
+`application.py` should own `Context(runtime.strategy)` and delegate execution.
+`web.py` should mostly import and call `register_*` functions from module folders
+for endpoint and API declarations.
+
 ## Layer Rules
 
 - Do not place route/action handlers outside `web/`, `api/`, `cli/`.

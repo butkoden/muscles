@@ -67,6 +67,20 @@ def test_route_lookup_uses_key_index_and_params():
     assert params == {'id': '42'}
 
 
+def test_same_path_can_use_distinct_keys_per_method():
+    itinerary = make_itinerary('test-path-method-distinct-keys')
+    list_handler = itinerary.add('/items', key='items.list', handler=handler, method='GET')
+    create_handler = itinerary.add('/items', key='items.create', handler=other_handler, method='POST')
+
+    get_route, _ = itinerary.get_current_route(Request('/items', method='GET'))
+    post_route, _ = itinerary.get_current_route(Request('/items', method='POST'))
+
+    assert get_route['handler'] is list_handler
+    assert get_route['key'] == 'items.list'
+    assert post_route['handler'] is create_handler
+    assert post_route['key'] == 'items.create'
+
+
 def test_duplicate_route_registration_is_idempotent():
     itinerary = make_itinerary('test-duplicate-route')
     itinerary.add('/items/{id}', key='items.show', handler=handler, method='GET')

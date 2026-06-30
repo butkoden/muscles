@@ -1,6 +1,8 @@
 from .configure import Configurator
 from .context import BaseStrategy, Context
 from .dependency import DependencyStorage, Dependency, inject
+from .container import DependencyContainer, DependencyScope
+from .backend_pipeline import BackendPipeline
 from .heandler import ResponseHandler, BaseResponseHandler
 from .self import Self
 from .storage import storageMapper, Storage, StorageStrategy, StorageMapper
@@ -45,6 +47,9 @@ __all__ = (
     "DependencyStorage",
     "Dependency",
     "inject",
+    "DependencyContainer",
+    "DependencyScope",
+    "BackendPipeline",
     "BaseResponseHandler",
     "ResponseHandler",
     "Self",

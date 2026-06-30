@@ -154,6 +154,29 @@ More detail: [golden-path.md](golden-path.md),
 builds URLs and stores route metadata. Runtime packages reuse this structure for
 HTTP routes, REST controllers, static routes and CLI command trees.
 
+Endpoint metadata for OpenAPI and transport behavior is attached directly in the
+route decorators (`summary`, `description`, `tags`, `security`, `request`,
+`response`, `parameters`).
+
+```python
+from muscles import Itinerary, JsonResponseBody, BearerAuthSecurity
+
+api = Itinerary(name="api")
+documents = api.group("/api/documents", tags=["Documents"], security=[BearerAuthSecurity()])
+
+
+@documents.init(
+    "/{id}",
+    method="get",
+    summary="Show document",
+    description="Returns a document for the current user.",
+    security=[BearerAuthSecurity()],
+    response={200: JsonResponseBody(description="Document loaded")},
+)
+def show_document(request, id):
+    return {"id": id}
+```
+
 Route groups add a shared prefix and metadata:
 
 ```python
@@ -190,6 +213,41 @@ Use `auth=False` for public endpoints inside protected route groups. Use
 `auth=[...]` to replace inherited security for one endpoint.
 
 More detail: [backend-framework.md](backend-framework.md).
+
+## Endpoint Key Rule (Important)
+
+`routes.init(...)` uses both `route` and `key` together with `method`.
+
+- You may use one shared `key` for all methods of the same path.
+- You may also use distinct keys per method when operation names must differ.
+- Route lookup selects from all route records attached to the matched terminal
+  node, then filters by method and content type.
+
+```python
+# Shared key
+@api.init("/api/documents", key="documents.collection", method="get", summary="List")
+def list_documents(request):
+    ...
+
+
+@api.init("/api/documents", key="documents.collection", method="post", summary="Create")
+def create_document(request):
+    ...
+
+
+# Distinct keys
+@api.init("/api/documents", key="documents.list", method="get", summary="List")
+def list_documents_v2(request):
+    ...
+
+
+@api.init("/api/documents", key="documents.create", method="post", summary="Create")
+def create_document_v2(request):
+    ...
+```
+
+Prefer `auth=False` for public endpoints and explicit security objects
+(`BearerAuthSecurity`, `ApiKeyAuthSecurity`) for protected endpoints.
 
 ## Middleware, Guards And CORS
 

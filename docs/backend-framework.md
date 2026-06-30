@@ -16,6 +16,41 @@ Runtime implementations:
   primitives in WSGI, including typed handler arguments, guards, security,
   CORS preflight and OpenAPI projection.
 
+## Backend Pipeline
+
+`BackendPipeline` is the shared runtime contract for request handling. Runtime
+adapters pass a framework request and matched route params into the pipeline,
+and the pipeline handles:
+
+- typed handler argument binding from path params, body, query, headers and cookies;
+- dependency resolution;
+- route guards and `auth=False` overrides;
+- route-level security providers;
+- middleware execution, including CORS middleware.
+
+Transports still own protocol parsing and protocol response serialization. This
+keeps ASGI and WSGI behavior aligned without copying handler logic into each
+runtime.
+
+## Dependency Container
+
+`DependencyContainer` is a small app/request scoped container for framework
+integrations:
+
+```python
+from muscles import DependencyContainer
+
+container = DependencyContainer()
+container.register(StoreInterface, SqliteStore, scope="app")
+request_scope = container.create_scope()
+
+store = request_scope.resolve(StoreInterface)
+```
+
+Supported scopes are `app`, `request` and `transient`. Existing
+`Dependency(...)` registrations remain supported for compatibility; runtimes can
+gradually move to explicit containers.
+
 ## Route Groups
 
 Use `group()` to add a common prefix and metadata to a set of routes:
@@ -41,6 +76,22 @@ def show_document(request, id):
 
 Group metadata is inherited by registered handlers. ASGI and WSGI OpenAPI
 builders use this metadata for tags, security and common responses.
+
+Routes on the same path can use distinct keys per HTTP method:
+
+```python
+@api.init("/api/documents", key="documents.list", method="get")
+def list_documents(request):
+    return {"items": []}
+
+
+@api.init("/api/documents", key="documents.create", method="post")
+def create_document(request):
+    return {"created": True}
+```
+
+The core itinerary keeps all route records on the matched terminal node and then
+selects by method and content type.
 
 Use endpoint-level `auth` to override inherited auth metadata:
 
