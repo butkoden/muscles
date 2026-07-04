@@ -13,7 +13,7 @@ from .core import ApplicationRegistry, get_application_registry
 from .core import ActionContext, ActionContract, ActionDispatcher, ActionResult, ApplicationContract
 from .core import ActionError, ActionExecutionError, ActionNotFound, ActionPermissionDenied, ActionValidationError
 from .core import StreamEvent, StreamResult, coerce_stream_event, stream_events
-from .core import action, dispatch_action
+from .core import action, dispatch_action, register_action
 from .response import BaseResponse, BytesResponse, FileResponse, JsonResponse, HtmlResponse, NoContentResponse, normalize_response
 from .errors import normalize_problem_payload
 from .cors import CorsMiddleware, cors
@@ -214,6 +214,7 @@ __all__ = (
     "stream_events",
     "action",
     "dispatch_action",
+    "register_action",
     "GenerationRequest",
     "GeneratorProvider",
     "GeneratorRegistry",

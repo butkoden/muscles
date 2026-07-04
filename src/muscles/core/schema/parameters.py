@@ -1,3 +1,5 @@
+from typing import Any
+
 from .schema import Schema
 
 
@@ -11,7 +13,7 @@ class BaseParameter(Schema):
             param_type = param_type()
         super().__init__(name, param_type, *args, **kwargs)
         self.name = name
-        self.param_type = param_type
+        self.param_type: Any = param_type
         self.required = required
         self.explode = explode
         self.description = description

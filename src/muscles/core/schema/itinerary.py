@@ -2,6 +2,7 @@ import inspect
 import logging
 import re
 import os
+import typing
 import traceback
 from collections import defaultdict
 from functools import wraps
@@ -14,6 +15,10 @@ from ..route_contract import normalize_path
 from .schema import Schema
 from .security import BaseSecurity
 from .user import GuestUser
+
+
+RouteRecord = dict[str, typing.Any]
+SecurityDeclaration = list[typing.Union[BaseSecurity, str]]
 
 
 HTTP_METHOD_GET = 'get'
@@ -108,18 +113,41 @@ class Itinerary:
     Базовый класс для работы с роутами
     """
 
-    legal_http_method = [HTTP_METHOD_GET, HTTP_METHOD_POST, HTTP_METHOD_PUT, HTTP_METHOD_DELETE, HTTP_METHOD_HEAR, 
-                         HTTP_METHOD_PATCH, HTTP_METHOD_OPTION, HTTP_METHOD_TRACE, HTTP_METHOD_CONNECT]
+    legal_http_method: list[str] = [
+        HTTP_METHOD_GET,
+        HTTP_METHOD_POST,
+        HTTP_METHOD_PUT,
+        HTTP_METHOD_DELETE,
+        HTTP_METHOD_HEAR,
+        HTTP_METHOD_PATCH,
+        HTTP_METHOD_OPTION,
+        HTTP_METHOD_TRACE,
+        HTTP_METHOD_CONNECT,
+    ]
     
 
     # nodes_map = []
     # static_map = []
-    error_handler_map = []
-    rules = []
-    node = None
-    _instances = {}
+    error_handler_map: list[RouteRecord] = []
+    rules: list[typing.Any] = []
+    node: "Node"
+    prefix: typing.Optional[str]
+    nodes_map: list[RouteRecord]
+    static_map: list[RouteRecord]
+    _routes_by_key: typing.DefaultDict[str, list[RouteRecord]]
+    _routes_by_path: typing.DefaultDict[str, list[RouteRecord]]
+    _error_handlers_by_code: dict[typing.Any, typing.Callable[..., typing.Any]]
+    _error_handlers_by_exception: dict[type[BaseException], typing.Callable[..., typing.Any]]
+    _error_status_by_exception: dict[type[BaseException], int]
+    _default_error_handler: typing.Optional[typing.Callable[..., typing.Any]]
+    _match_cache: dict[str, typing.Union["Node", bool]]
+    _middlewares: list[typing.Callable[..., typing.Any]]
+    _guards: list[dict[str, typing.Any]]
+    _events: dict[typing.Any, list[typing.Any]]
+    install: bool
+    _instances: dict[tuple[type, typing.Optional[str]], "Itinerary"] = {}
 
-    set_response = {}
+    set_response: dict[str, typing.Any] = {}
 
     def __new__(cls, *args, prefix=None, version=None, name=None, **kwargs):
         """
@@ -132,7 +160,7 @@ class Itinerary:
         """
         instance_name = (cls, name)
         if instance_name not in cls._instances:
-            instance = super(Itinerary, cls).__new__(cls)
+            instance = typing.cast("Itinerary", super(Itinerary, cls).__new__(cls))
             instance.node = Node('')
             instance.prefix = prefix
             instance.nodes_map = []
@@ -207,7 +235,7 @@ class Itinerary:
     def get_middlewares(self):
         return list(self._middlewares)
 
-    def guard(self, pattern: str, handler, except_: list[str] = None):
+    def guard(self, pattern: str, handler, except_: typing.Optional[list[str]] = None):
         self._guards.append({
             "pattern": pattern,
             "handler": handler,
@@ -245,11 +273,12 @@ class Itinerary:
         """
         l = []
 
-        def repl(m):
+        def repl(m: re.Match[str]) -> str:
             name = m.group(3) if m.group(3) else 'var'
             for rule in self.rules:
                 if rule.name == name:
-                    return rule.compile(params.get(m.group(2), ''))
+                    return str(rule.compile(params.get(m.group(2), '')))
+            return str(params.get(m.group(2), ''))
 
         for r in self._routes_by_key.get(route_key, []):
             rs = r['route'].split('/')
@@ -308,17 +337,19 @@ class Itinerary:
         """
         chunks = url.split('/')
         node = self.match(url)
-        if node is None:
+        if not isinstance(node, Node):
             return None, {}
-        _node = node
+        _node: typing.Optional[Node] = node
         dictionary = {}
         for chunk in chunks[::-1]:
+            if _node is None:
+                break
             if _node.dictionary_key:
                 dictionary.update(_node.dictionary(chunk))
             _node = _node.parent
         return node, dictionary
 
-    def add_static(self, directory: str, prefix: str = None, handler=None, full_path: bool = False):
+    def add_static(self, directory: str, prefix: typing.Optional[str] = None, handler=None, full_path: bool = False):
         """
         функции обработки статических файлов
 
@@ -337,7 +368,7 @@ class Itinerary:
             'handler': handler,
         })
 
-    def static(self, directory: str, prefix: str = None, full_path: bool = False):
+    def static(self, directory: str, prefix: typing.Optional[str] = None, full_path: bool = False):
         """
         Декторатор функции обработки статических файлов
 
@@ -402,8 +433,10 @@ class Itinerary:
     def _trigger_set_controller(self, handler, *args, **kwargs):
         return handler
 
-    def add(self, route, key=None, handler=None, method=None, content_type=None,
-            redirect: str = None, module=None, canonical_route: str = None, aliases: list[str] = None):
+    def add(self, route: str, key: typing.Optional[str] = None, handler: typing.Any = None,
+            method: typing.Optional[str] = None, content_type: typing.Optional[str] = None,
+            redirect: typing.Optional[str] = None, module=None,
+            canonical_route: typing.Optional[str] = None, aliases: typing.Optional[list[str]] = None):
         """
         Добавляет функцию обработки маршрута
 
@@ -438,7 +471,7 @@ class Itinerary:
         self._match_cache.clear()
         node = self.node
         canonical_route = canonical_route if canonical_route is not None else route
-        created_route_record = None
+        created_route_record: typing.Optional[RouteRecord] = None
         if key is None or not key:
             key = '.'.join(tuple(chunks[1:] if chunks[0] == '' else chunks))
         _key, key = key, None
@@ -483,25 +516,28 @@ class Itinerary:
                     self._routes_by_path[_route_path_key(route)].append(route_record)
                     created_route_record = route_record
             node = node.instance(normalized_chunk, full_route=full_route, key=key, dictionary_key=dictionary_key, rule=rule)
-        handler.node = node
+        if handler is None:
+            raise Exception('The route handler was not attached')
+        route_handler = typing.cast(typing.Any, handler)
+        route_handler.node = node
         if created_route_record is not None and created_route_record not in node.route_records:
             node.route_records.append(created_route_record)
-        handler.full_route = full_route
-        handler.canonical_route = canonical_route
-        handler.aliases = aliases or []
+        route_handler.full_route = full_route
+        route_handler.canonical_route = canonical_route
+        route_handler.aliases = aliases or []
 
-        if method == '*' and handler is not None and handler.__name__ in self.legal_http_method:
-            handler.method = handler.__name__
-        elif not hasattr(handler, 'method') or not handler.method:
-            handler.method = method
-        if not hasattr(handler, 'content_type') or not handler.content_type:
-            handler.content_type = content_type
-        if not hasattr(handler, 'redirect') or not handler.redirect:
-            handler.redirect = redirect
-        return handler
+        if method == '*' and route_handler.__name__ in self.legal_http_method:
+            route_handler.method = route_handler.__name__
+        elif not hasattr(route_handler, 'method') or not route_handler.method:
+            route_handler.method = method
+        if not hasattr(route_handler, 'content_type') or not route_handler.content_type:
+            route_handler.content_type = content_type
+        if not hasattr(route_handler, 'redirect') or not route_handler.redirect:
+            route_handler.redirect = redirect
+        return route_handler
 
     def init(self, route, *args, key=None, module=None, method=None, content_type=None,
-             redirect: str = None, **kwargs):
+             redirect: typing.Optional[str] = None, **kwargs):
         """
         Декоратор функции обработки маршрута
 
@@ -529,7 +565,8 @@ class Itinerary:
 
         return decorator
 
-    def controller(self, route, *args, model: Schema = None, security: list[BaseSecurity, str] = None, **kwargs):
+    def controller(self, route, *args, model: typing.Optional[Schema] = None,
+                   security: typing.Optional[SecurityDeclaration] = None, **kwargs):
         """
         Регистрация контроллера для обработки запросов классом
 
@@ -580,7 +617,8 @@ class Itinerary:
         return decorator
 
     def action(self, *args, route=None, key=None, module=None, method=None, content_type=None,
-               redirect: str = None, model: Schema = None, security: list[BaseSecurity, str] = None, **kwargs):
+               redirect: typing.Optional[str] = None, model: typing.Optional[Schema] = None,
+               security: typing.Optional[SecurityDeclaration] = None, **kwargs):
         """
         Регистрация "действия" для контроллера.
         Внимание: Работает только совместно с регистрацией контроллера с помощью метода controller
@@ -640,7 +678,7 @@ class Itinerary:
 
             wrapper.__name__ = func.__name__
             wrapper.__doc__ = func.__doc__
-            wrapper.security = getattr(func, "security", [])
+            setattr(wrapper, "security", getattr(func, "security", []))
             return wrapper
 
         return decorator
@@ -713,13 +751,14 @@ class Itinerary:
         :return:
         """
         node, dictionary = self.match_with_params(request.path)
-        if node is None:
+        if not isinstance(node, Node):
             return None, ()
         request_method = request.method.upper()
         request_content_type = request.content_type.lower()
 
         path_key = _route_path_key(getattr(node, "full_route", None) or "")
-        candidates = getattr(node, "route_records", None) or self._routes_by_path.get(path_key) or self._routes_by_key.get(node.key, [])
+        key_candidates = self._routes_by_key.get(node.key, []) if node.key is not None else []
+        candidates = getattr(node, "route_records", None) or self._routes_by_path.get(path_key) or key_candidates
 
         def condition(route):
             """condition here"""
@@ -744,7 +783,7 @@ class Itinerary:
 
         status, handler = self._find_exception_error_mapping(error) if isinstance(error, BaseException) else (None, None)
         if status is not None and not hasattr(error, "status"):
-            error.status = status
+            setattr(error, "status", status)
         if handler:
             return {"code": status, "handler": handler}
 
@@ -786,15 +825,22 @@ class Node(ABC):
     """
     Класс узла роутера
     """
-    route = None
-    rule = None
-    name = None
-    dictionary = None
-    key = None
-    method = None
-    content_type = None
+    route: typing.Optional[str] = None
+    rule: typing.Any = None
+    name: typing.Optional[str] = None
+    key: typing.Optional[str] = None
+    method: typing.Optional[str] = None
+    content_type: typing.Optional[str] = None
+    full_route: typing.Optional[str]
+    parent: typing.Optional["Node"]
+    weight: int
+    dictionary_key: typing.Optional[str]
+    _childrens: list["Node"]
+    _children_by_route: dict[typing.Optional[str], "Node"]
+    route_records: list[RouteRecord]
 
-    def __init__(self, chunk_route, key=None, full_route=None, dictionary_key=None, rule=None, parent=None):
+    def __init__(self, chunk_route, key=None, full_route=None, dictionary_key=None, rule=None,
+                 parent: typing.Optional["Node"] = None):
         """
         Конструктор класса роутера
 
@@ -829,7 +875,7 @@ class Node(ABC):
         """
         return self._children_by_route.get(chunk_route.lower())
 
-    def instance(self, chunk_route, key=None, full_route=None, dictionary_key=None, rule=None):
+    def instance(self, chunk_route, key=None, full_route=None, dictionary_key=None, rule=None) -> "Node":
         """
         Формирует узел
 

@@ -1,6 +1,6 @@
 from __future__ import annotations
 from functools import wraps
-from typing import Any, Optional
+from typing import Any, Optional, cast
 from abc import ABC, abstractmethod
 import inspect
 from .heandler import BaseResponseHandler
@@ -44,8 +44,7 @@ class Context:
         :return:
         """
         if self not in self._instances:
-            instance = super().__call__(*args, **kwargs)
-            self._instances[self] = instance
+            self._instances[self] = self
         return self._instances[self]
 
     def __init__(self,
@@ -53,7 +52,7 @@ class Context:
                  transport: str | Context | Any | None = None,
                  options: Optional[dict] = None,
                  params: Optional[dict] = None,
-                 error_handler: Optional[BaseResponseHandler] = None) -> None:
+                 error_handler: Any = None) -> None:
         """
         Обычно Контекст принимает стратегию через конструктор, а также
         предоставляет сеттер для её изменения во время выполнения.
@@ -192,7 +191,7 @@ class Context:
         self._strategy = strategy
         self._strategy_instance = None
 
-    def execute(self, *args, **kwargs) -> str:
+    def execute(self, *args, **kwargs) -> Any:
         """
         Вместо того, что-бы самостоятельно реализовывать множественные версии
         алгоритма, Контекст делегирует некоторую работу объекту Стратегии.
@@ -207,8 +206,9 @@ class Context:
 
         strategy_ref = self.strategy
         if inspect.isclass(strategy_ref):
-            if self._strategy_instance is None or not isinstance(self._strategy_instance, strategy_ref):
-                self._strategy_instance = strategy_ref()
+            strategy_cls = cast(type[BaseStrategy], strategy_ref)
+            if self._strategy_instance is None or not isinstance(self._strategy_instance, strategy_cls):
+                self._strategy_instance = strategy_cls()
             strategy = self._strategy_instance
         elif callable(strategy_ref) and not hasattr(strategy_ref, 'execute'):
             strategy = strategy_ref()

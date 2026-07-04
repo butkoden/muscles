@@ -2,17 +2,31 @@ from __future__ import annotations
 import sys
 import os
 import importlib
+import importlib.util
 import inspect
+import typing
 import traceback
 from abc import abstractmethod, ABC
 from .dependency import Dependency
 from .registry import ApplicationRegistry
 
 
-class StorageInterface(ABC):
-    _instances = {}
+PackagePaths = typing.Union[list[str], dict[str, str]]
 
-    def __call__(cls, *args, **kwargs):
+
+def _package_paths(owner: typing.Any) -> typing.Optional[PackagePaths]:
+    paths = getattr(owner, "package_paths", None)
+    if isinstance(paths, list):
+        return [str(path) for path in paths]
+    if isinstance(paths, dict):
+        return {str(key): str(value) for key, value in paths.items()}
+    return None
+
+
+class StorageInterface(ABC):
+    _instances: dict[type, typing.Any] = {}
+
+    def __call__(self, *args, **kwargs):
         """
         Реализуем патерн одиночка
 
@@ -20,8 +34,9 @@ class StorageInterface(ABC):
         :param kwargs:
         :return:
         """
+        cls = type(self)
         if cls not in cls._instances:
-            cls._instances[cls] = super(StorageInterface, cls).__call__(*args, **kwargs)
+            cls._instances[cls] = self
         return cls._instances[cls]
 
     @abstractmethod
@@ -145,14 +160,15 @@ class ApplicationMeta(type):
         # Для примера создадим реестр всех наследников.
         # cls.registry.append(cls)
 
-        if hasattr(cls, 'package_paths') and isinstance(cls.package_paths, list):
-            for path in cls.package_paths:
+        package_paths = _package_paths(cls)
+        if isinstance(package_paths, list):
+            for path in package_paths:
                 sys.path.append(f"{directory}/{path}")
-        elif hasattr(cls, 'package_paths') and isinstance(cls.package_paths, dict):
-            for item in cls.package_paths:
+        elif isinstance(package_paths, dict):
+            for item in package_paths:
                 # logger.debug(locale('Найден компонент {package}',
                 #                     package=f"{directory}/{cls.package_paths[item]}"))
-                sys.path.append(f"{directory}/{cls.package_paths[item]}")
+                sys.path.append(f"{directory}/{package_paths[item]}")
 
     def __new__(cls, class_name, parents, attributes, *args, **kwargs):
         """
@@ -173,15 +189,15 @@ class ApplicationMeta(type):
         setattr(new_class, 'init_imports', cls.init_imports)
 
         # Инициализация методов в зависимости от структуры package_paths
-        if hasattr(new_class, 'package_paths'):
-            if isinstance(new_class.package_paths, list):
-                for item in new_class.package_paths:
-                    method_name = f'init_{item}'
-                    setattr(new_class, method_name, cls.__init_structure(new_class, item))
-            elif isinstance(new_class.package_paths, dict):
-                for item in new_class.package_paths:
-                    method_name = f'init_{item}'
-                    setattr(new_class, method_name, cls.__init_structure(new_class, item))
+        package_paths = _package_paths(new_class)
+        if isinstance(package_paths, list):
+            for item in package_paths:
+                method_name = f'init_{item}'
+                setattr(new_class, method_name, cls.__init_structure(new_class, item))
+        elif isinstance(package_paths, dict):
+            for item in package_paths:
+                method_name = f'init_{item}'
+                setattr(new_class, method_name, cls.__init_structure(new_class, item))
 
         # Создание основного приложения с ссылкой на новый класс
         main = Application(ref=new_class)
@@ -206,18 +222,21 @@ class ApplicationMeta(type):
         :return:
         """
         try:
-            if isinstance(sys.modules, dict):
-                if package in sys.modules:
-                    module = sys.modules.get(package)
-                    module.__spec__.loader.exec_module(module)
-                elif (spec := importlib.util.find_spec(package)) is not None:
-                    module = importlib.util.module_from_spec(spec)
-                    sys.modules[package] = module
-                    spec.loader.exec_module(module)
-                else:
+            module = sys.modules.get(package)
+            if module is not None:
+                module = importlib.reload(module)
+            else:
+                spec = importlib.util.find_spec(package)
+                if spec is None or spec.loader is None:
                     raise Exception('Package %s not found' % package)
+                module = importlib.util.module_from_spec(spec)
+                sys.modules[package] = module
+                spec.loader.exec_module(module)
             if config is not None:
-                module.init_package(cls, config)
+                init_package = getattr(module, "init_package", None)
+                if not callable(init_package):
+                    raise Exception('Package %s not found' % package)
+                init_package(cls, config)
         except Exception as e:
             traceback.print_exc()
             raise Exception('Package %s not found' % package)
@@ -302,7 +321,8 @@ class ApplicationMeta(type):
         :return:
         """
         if package_paths is None:
-            package_paths = self.package_paths or []
+            paths = _package_paths(self)
+            package_paths = list(paths.keys()) if isinstance(paths, dict) else paths or []
         for item in package_paths:
             if item not in dict(config):
                 continue
@@ -369,12 +389,13 @@ class PackageMeta(type):
     def __init_subclass__(cls, *args, **kwargs):
         super().__init_subclass__()
         directory = os.getcwd()
-        if hasattr(cls, 'package_paths') and isinstance(cls.package_paths, list):
-            for path in cls.package_paths:
+        package_paths = _package_paths(cls)
+        if isinstance(package_paths, list):
+            for path in package_paths:
                 sys.path.append(f"{directory}/{path}")
-        elif hasattr(cls, 'package_paths') and isinstance(cls.package_paths, dict):
-            for item in cls.package_paths:
-                sys.path.append(f"{directory}/{cls.package_paths[item]}")
+        elif isinstance(package_paths, dict):
+            for item in package_paths:
+                sys.path.append(f"{directory}/{package_paths[item]}")
 
     def __new__(cls, class_name, parents, attributes):
         """
@@ -397,13 +418,14 @@ class PackageMeta(type):
         #     if inspect.isclass(type(attr)) and isinstance(attr, Prop):
         #         setattr(attr, 'app', c)
 
-        if hasattr(c, 'package_paths') and isinstance(c.package_paths, list):
-            for item in c.package_paths:
+        package_paths = _package_paths(c)
+        if isinstance(package_paths, list):
+            for item in package_paths:
                 sys.path.append(f"{directory}/{item}")
                 setattr(c, ''.join(['init_', item]), cls.__init_structure(c, item))
-        elif hasattr(c, 'package_paths') and isinstance(c.package_paths, dict):
-            for item in c.package_paths:
-                sys.path.append(f"{directory}/{cls.package_paths[item]}")
+        elif isinstance(package_paths, dict):
+            for item in package_paths:
+                sys.path.append(f"{directory}/{package_paths[item]}")
                 setattr(c, ''.join(['init_', item]), cls.__init_structure(c, item))
 
         return c
@@ -427,24 +449,17 @@ class PackageMeta(type):
         :return:
         """
         dir_list = package.split('.')
-        spec = importlib.util.spec_from_file_location(package, '/'.join([cls.directory] + dir_list + ['__init__.py']))
-        if spec is not None:
-            # _package = importlib.import_module(package)
-            _package = spec.loader.load_module()
-            try:
-                _package.init_package(cls, config)
-            except Exception as e:
-                # tb_str = traceback.format_exception(etype=type(e), value=e, tb=e.__traceback__)
-                # print('!!!ERROR: ', "\n".join(tb_str))
-                # traceback.print_exc()
-                raise e
-            except IndentationError as e:
-                # tb_str = traceback.format_exception(etype=type(e), value=e, tb=e.__traceback__)
-                # print('!!!ERROR: ', "/n".join(tb_str))
-                # traceback.print_exc()
-                raise e
-        else:
+        directory = getattr(cls, "directory", os.getcwd())
+        spec = importlib.util.spec_from_file_location(package, '/'.join([directory] + dir_list + ['__init__.py']))
+        if spec is None or spec.loader is None:
             raise Exception('Package %s not found' % package)
+        _package = importlib.util.module_from_spec(spec)
+        sys.modules[package] = _package
+        spec.loader.exec_module(_package)
+        init_package = getattr(_package, "init_package", None)
+        if not callable(init_package):
+            raise Exception('Package %s not found' % package)
+        init_package(cls, config)
 
     def get_package_config(self, package_obj: dict, init_key=None):
         """
@@ -525,7 +540,8 @@ class PackageMeta(type):
         :param config: - объект конфигурации, который содержит ключи из атрибута package_paths
         :return:
         """
-        for item in self.package_paths:
+        package_paths = _package_paths(self) or []
+        for item in package_paths:
             if item not in config:
                 continue
             for init_key in config[item]:

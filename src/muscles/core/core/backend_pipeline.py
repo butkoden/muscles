@@ -48,7 +48,7 @@ class BackendPipeline:
                 return annotation.model_validate(payload)
             if hasattr(annotation, "parse_obj"):
                 return annotation.parse_obj(payload)
-            if is_dataclass(annotation):
+            if inspect.isclass(annotation) and is_dataclass(annotation):
                 return annotation(**(payload or {}))
             if inspect.isclass(annotation) and isinstance(payload, dict):
                 return annotation(**payload)

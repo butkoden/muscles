@@ -34,6 +34,7 @@ from .actions import (
     stream_events,
     action,
     dispatch_action,
+    register_action,
 )
 
 
@@ -85,6 +86,7 @@ __all__ = (
     "stream_events",
     "action",
     "dispatch_action",
+    "register_action",
     "GenerationRequest",
     "GeneratorProvider",
     "GeneratorRegistry",

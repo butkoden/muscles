@@ -10,6 +10,9 @@ class Self(Prop):
 
     _instance = None
     _name = None
+    app = None
+    public_name = None
+    private_name = None
 
     def __set_name__(self, owner, name):
         self.public_name = name
@@ -19,4 +22,7 @@ class Self(Prop):
         return self.app
 
     def __deepcopy__(self, memo):
-        return self.copy()
+        copy_method = getattr(self, "copy", None)
+        if callable(copy_method):
+            return copy_method()
+        return self

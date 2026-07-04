@@ -1,9 +1,16 @@
+import typing
+
 from .field import BaseField
 from .schema import Schema
 from .exception import ValidationColumnException
 
 
 class BaseColumn(Schema):
+    column_name: typing.Optional[str]
+    field_type: typing.Any
+    value: typing.Any
+    constructor: tuple[list[typing.Any], dict[str, typing.Any]]
+    error: typing.Any
 
     def __set_name__(self, owner, name):
         self.column_name = name

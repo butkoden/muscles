@@ -27,10 +27,12 @@ def _read_config_mode(config) -> str | None:
     if config is None:
         return None
     if isinstance(config, dict):
-        return config.get("main", {}).get("ENV")
+        value = config.get("main", {}).get("ENV")
+        return str(value) if value is not None else None
     getter = getattr(config, "get", None)
     if callable(getter):
-        return getter("main.ENV", None)
+        value = getter("main.ENV", None)
+        return str(value) if value is not None else None
     return None
 
 
