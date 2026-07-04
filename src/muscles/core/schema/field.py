@@ -3,7 +3,7 @@ import json
 import re
 import json as jsonLib
 import uuid
-from typing import Union
+from typing import Any, Union
 
 from .schema import Schema
 from ..schema.exception import ValidationColumnException
@@ -30,17 +30,17 @@ class BaseField(Schema):
         })
         return results
 
-    def to_json(self) -> dict:
+    def to_json(self) -> Any:
         return self
 
-    def getstate(self, value, column) -> dict:
+    def getstate(self, value: Any, column: Any) -> Any:
         if value is None and callable(column.default):
             value = column.default()
         elif value is None:
             value = column.default
         return value
 
-    def setstate(self, value, column) -> dict:
+    def setstate(self, value: Any, column: Any) -> Any:
         if value is None and callable(column.default):
             value = column.default()
         elif value is None:
@@ -102,7 +102,7 @@ class List(BaseField):
             ))
         return True
 
-    def setstate(self, value, column) -> dict:
+    def setstate(self, value, column) -> Any:
         if isinstance(value, str):
             value = [value]
         elif isinstance(value, int):
@@ -113,7 +113,7 @@ class List(BaseField):
             value = column.default
         return value
 
-    def getstate(self, value, column) -> datetime:
+    def getstate(self, value: Any, column: Any) -> Any:
         if isinstance(value, str):
             value = [value]
         elif isinstance(value, int):
@@ -303,7 +303,7 @@ class UUID4(BaseField):
         results["type"] = "string"
         return results
 
-    def getstate(self, value, column) -> Union[None, uuid.UUID]:
+    def getstate(self, value: Any, column: Any) -> Any:
         if value in ('generate_uuid4', 'gen'):
             value = uuid.uuid4()
         elif callable(value):
@@ -316,7 +316,7 @@ class UUID4(BaseField):
             value = uuid.UUID(str(value))
         return value
 
-    def setstate(self, value, column) -> Union[None, uuid.UUID]:
+    def setstate(self, value: Any, column: Any) -> Any:
         if value in ('generate_uuid4', 'gen'):
             value = uuid.uuid4()
         elif callable(value):
@@ -433,7 +433,7 @@ class Json(BaseField):
         })
         return results
 
-    def getstate(self, value, column) -> dict:
+    def getstate(self, value: Any, column: Any) -> Any:
         if value is None and callable(column.default):
             value = column.default()
         elif value is None:
@@ -443,7 +443,7 @@ class Json(BaseField):
         except Exception as e:
             return {}
 
-    def setstate(self, value, column) -> dict:
+    def setstate(self, value: Any, column: Any) -> Any:
         if value is None and callable(column.default):
             value = column.default()
         elif value is None:
@@ -465,7 +465,9 @@ class File(BaseField):
 
 class Date(BaseField):
     data_type = 'date'
-    def setstate(self, value, column) -> dict:
+    timezone = None
+
+    def setstate(self, value, column) -> Any:
         if value == 'now':
             value = datetime.datetime.now(tz=self.timezone)
         elif callable(value):
@@ -478,7 +480,7 @@ class Date(BaseField):
             value = column.default
         return value
 
-    def getstate(self, value, column) -> datetime:
+    def getstate(self, value, column) -> Any:
         if value == 'now':
             value = datetime.datetime.now(tz=self.timezone)
         elif callable(value):
@@ -513,7 +515,7 @@ class DateTime(BaseField):
         })
         return results
 
-    def setstate(self, value, column) -> dict:
+    def setstate(self, value, column) -> Any:
         if value == 'now':
             value = datetime.datetime.now(tz=self.timezone)
         elif callable(value):
@@ -526,7 +528,7 @@ class DateTime(BaseField):
             value = column.default
         return value
 
-    def getstate(self, value, column) -> datetime:
+    def getstate(self, value, column) -> Any:
         if value == 'now':
             value = datetime.datetime.now(tz=self.timezone)
         elif callable(value):

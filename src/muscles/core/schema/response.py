@@ -1,3 +1,5 @@
+from typing import Any
+
 from .schema import Schema
 from .model import Model
 
@@ -21,7 +23,7 @@ class ResponseBody(Schema):
         self.content_type = content_type
         self.description = description
         self.http_code = http_code
-        self.model = model
+        self.model: Any = model
         self.is_list = is_list
         self.min_items = min_items
         self.max_items = max_items

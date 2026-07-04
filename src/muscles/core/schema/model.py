@@ -1,3 +1,6 @@
+from __future__ import annotations
+
+import typing
 import uuid
 from .exception import ValidationColumnException
 from .schema import Schema
@@ -6,11 +9,15 @@ from .schema import Schema
 class BaseModel(Schema):
     __prefix__ = ""
     __collection__ = None
+    columns: dict[str, typing.Any]
+    _values: dict[str, typing.Any]
 
     def __init__(self, *args, is_new=True, **kwargs):
         super().__init__(*args, **kwargs)
         if not hasattr(self, "columns"):
-            self.columns = []
+            self.columns = {}
+        if not hasattr(self, "_values"):
+            self._values = {}
         if len(kwargs) > 0 and hasattr(self, 'columns'):
             for column in self.columns:
                 setattr(self, column, kwargs.get(column, self.columns[column].default))
@@ -158,9 +165,9 @@ class Model(BaseModel):
 
 class ModelStorage:
 
-    _instances = {}
+    _instances: dict[str, typing.Any] = {}
 
-    def __call__(cls, *args, name: str = None, **kwargs):
+    def __call__(self, *args, name: str | None = None, **kwargs):
         """
         Данная реализация не учитывает возможное изменение передаваемых
         аргументов в `__init__`.
@@ -170,12 +177,10 @@ class ModelStorage:
         :param kwargs:
         :return:
         """
-        key = '-'.join([str(cls), str(name)])
-        if key not in cls._instances:
-            kwargs['name'] = name
-            instance = super().__call__(*args, **kwargs)
-            cls._instances[key] = instance
-        return cls._instances[key]
+        key = '-'.join([str(type(self)), str(name)])
+        if key not in self._instances:
+            self._instances[key] = self
+        return self._instances[key]
 
     def __init__(self, *args, **kwargs) -> None:
         """
@@ -201,7 +206,7 @@ class ModelStorage:
         """
         self._models[key] = value
 
-    def __getitem__(self, key) -> Model:
+    def __getitem__(self, key) -> typing.Any:
         """
         Провайдер который достает и конструирует объект из класса в хранилище
 
@@ -235,7 +240,7 @@ class ModelStorage:
             raise Exception('ObjectStorage.add(%s, %s) -> Key already added' % (key, value))
         self._models[key] = value
 
-    def get(self, key) -> Model:
+    def get(self, key) -> typing.Any:
         """
         Вернет класс объекта из хранилища.
         Рекомендуется к использованию вместо обращения os[key]

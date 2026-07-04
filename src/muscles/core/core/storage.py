@@ -154,7 +154,11 @@ class StorageMapper:
 
     """
 
-    def __init__(self, strategy: StorageStrategy = None, storage: Storage = None) -> None:
+    def __init__(
+        self,
+        strategy: typing.Optional[typing.Type[StorageStrategy]] = None,
+        storage: typing.Optional[typing.Type[Storage]] = None,
+    ) -> None:
         """
         Конструктор класса для работы с хранилизами
         """
@@ -166,14 +170,14 @@ class StorageMapper:
         self.storage = storage
 
     @property
-    def strategy(self) -> StorageStrategy:
+    def strategy(self) -> typing.Type[StorageStrategy]:
         """
         Вернет текущую стратегию
         """
         return self._strategy
 
     @strategy.setter
-    def strategy(self, strategy: StorageStrategy) -> None:
+    def strategy(self, strategy: typing.Type[StorageStrategy]) -> None:
         """
         Установит текущую стратегию
         """
@@ -183,14 +187,14 @@ class StorageMapper:
         self._strategy = strategy
 
     @property
-    def storage(self) -> Storage:
+    def storage(self) -> typing.Type[Storage]:
         """
         Вернет текущее хранилище
         """
         return self._storage
 
     @storage.setter
-    def storage(self, storage: Storage) -> None:
+    def storage(self, storage: typing.Type[Storage]) -> None:
         """
         Установит текущее хранилище
         """

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from abc import ABC
-from typing import List
+from typing import Any, List, Optional
 
 
 class Schema(ABC):
@@ -9,7 +9,7 @@ class Schema(ABC):
     registry = []
 
     def __init__(self, *args, **kwargs):
-        self._parent = None
+        self._parent: Optional[Schema] = None
         self._children: List[Schema] = []
         for arg in args:
             if isinstance(arg, Schema):
@@ -29,11 +29,11 @@ class Schema(ABC):
         cls.registry.append(cls)
 
     @property
-    def parent(self) -> Schema:
+    def parent(self) -> Optional[Schema]:
         return self._parent
 
     @parent.setter
-    def parent(self, parent: Schema):
+    def parent(self, parent: Optional[Schema]):
         self._parent = parent
 
     def add(self, schema: Schema) -> None:
@@ -41,7 +41,7 @@ class Schema(ABC):
 
     def remove(self, schema: Schema) -> None:
         if schema in self._children:
-            del self._children[schema]
+            self._children.remove(schema)
 
     def is_composite(self) -> bool:
         return True
@@ -55,7 +55,7 @@ class Schema(ABC):
             "children": results
         }
 
-    def to_json(self) -> dict:
+    def to_json(self) -> Any:
         results = []
         for child in self._children:
             results.append(child.to_json())

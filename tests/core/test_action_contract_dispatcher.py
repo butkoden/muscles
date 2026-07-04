@@ -16,6 +16,7 @@ from muscles.core import (
     StreamResult,
     get_application_registry,
     inspect_application,
+    register_action,
     stream_events,
 )
 from muscles.core.core.actions import _register_action
@@ -75,6 +76,32 @@ def test_action_contract_registers_in_application_registry():
     assert isinstance(registry, ApplicationRegistry)
     assert registry.get_action("bookings.create") is contract
     assert registry.actions == [contract]
+
+
+def test_public_register_action_registers_contract_and_handler():
+    app = _AppA()
+
+    def create_booking(payload, context):
+        return {"id": 2, "title": payload["title"], "transport": context.transport}
+
+    contract = register_action(
+        app,
+        name="bookings.public_register",
+        input_schema=BOOKING_INPUT_SCHEMA,
+        output_schema=BOOKING_OUTPUT_SCHEMA,
+        transports=["http", "mcp"],
+        handler=create_booking,
+    )
+
+    result = ActionDispatcher(app).execute(
+        "bookings.public_register",
+        {"title": "Public"},
+        transport="mcp",
+    )
+
+    assert isinstance(contract, ActionContract)
+    assert get_application_registry(app).get_action("bookings.public_register") is contract
+    assert result.value == {"id": 2, "title": "Public", "transport": "mcp"}
 
 
 def test_app_action_decorator_registers_contract_and_handler():

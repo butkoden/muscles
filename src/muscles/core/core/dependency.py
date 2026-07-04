@@ -1,14 +1,15 @@
 from __future__ import annotations
 import inspect
+import typing
 from functools import wraps
 
 
 class DependencyStorage:
     _storages = {}
     _history = {}
-    _instances = {}
+    _instances: dict[type, typing.Any] = {}
 
-    def __call__(cls, *args, **kwargs):
+    def __call__(self, *args, **kwargs):
         """
         Данная реализация не учитывает возможное изменение передаваемых
         аргументов в `__init__`
@@ -17,9 +18,9 @@ class DependencyStorage:
         :param kwargs:
         :return:
         """
+        cls = type(self)
         if cls not in cls._instances:
-            instance = super().__call__(*args, **kwargs)
-            cls._instances[cls] = instance
+            cls._instances[cls] = self
         return cls._instances[cls]
 
     def add(self, dependency, inject, *args, **kwargs):

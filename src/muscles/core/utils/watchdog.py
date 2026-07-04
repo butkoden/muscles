@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Union
+from typing import Callable, Union
 from watchdog.observers import Observer
 from watchdog.events import PatternMatchingEventHandler
 
@@ -35,7 +35,13 @@ class Watchdog:
 
     _instances = {}
 
-    def __new__(cls, *args, config=None,  handler: Union[WatchdogHandlerInterface, callable] = None, **kwargs):
+    def __new__(
+        cls,
+        *args,
+        config=None,
+        handler: Union[type[WatchdogHandlerInterface], Callable[..., WatchdogHandlerInterface], None] = None,
+        **kwargs,
+    ):
         """
         Конструктор класса
 
@@ -47,10 +53,14 @@ class Watchdog:
             cls._instances[cls] = instance
         return cls._instances[cls]
 
-    def __init__(self, config=None, handler: Union[WatchdogHandlerInterface, callable] = None):
+    def __init__(
+        self,
+        config=None,
+        handler: Union[type[WatchdogHandlerInterface], Callable[..., WatchdogHandlerInterface], None] = None,
+    ):
         if config is None:
             config = {}
-        event_handler = PatternMatchingHandler(handler, **config.get('config'))
+        event_handler = PatternMatchingHandler(handler, **(config.get('config') or {}))
         observer = Observer()
         # print('Observer path: %s' % str(config.get('path').dump()))
         # print(config.dump())

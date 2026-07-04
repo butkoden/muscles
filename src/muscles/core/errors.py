@@ -1,11 +1,7 @@
 from __future__ import annotations
 
 import traceback
-from types import TracebackType
-from typing import Any, TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from .schema.itinerary import Request
+from typing import Any
 
 
 ERROR_TITLES = {

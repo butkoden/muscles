@@ -246,16 +246,35 @@ def _register_action(
     return contract
 
 
-def register_action(*args, **kwargs):
-    """
-    INTERNAL ONLY.
-
-    This symbol is kept for temporary compatibility with existing internal calls and
-    must not be used from user code outside muscles core.
-    New code should avoid this API and register actions via @app.action decorator.
-    """
-    raise RuntimeError(
-        "register_action is private and must not be used outside Muscles core internals."
+def register_action(
+    app,
+    *,
+    name: str,
+    description: str = "",
+    input_schema: Any = None,
+    output_schema: Any = None,
+    rules: list[Any] | None = None,
+    handler_ref: str | None = None,
+    transports: list[str] | None = None,
+    stream_output: bool = False,
+    stream_metadata: dict[str, Any] | None = None,
+    metadata: dict[str, Any] | None = None,
+    handler: Callable[..., Any] | None = None,
+) -> ActionContract:
+    """Register a public action contract for an application instance."""
+    return _register_action(
+        app,
+        name=name,
+        description=description,
+        input_schema=input_schema,
+        output_schema=output_schema,
+        rules=rules,
+        handler_ref=handler_ref,
+        transports=transports,
+        stream_output=stream_output,
+        stream_metadata=stream_metadata,
+        metadata=metadata,
+        handler=handler,
     )
 
 
@@ -300,8 +319,9 @@ class ActionDispatcher:
         try:
             value = self._call_handler(action, payload, context)
             if inspect.isawaitable(value):
-                if hasattr(value, "close"):
-                    value.close()
+                close = getattr(value, "close", None)
+                if callable(close):
+                    close()
                 raise ActionExecutionError(
                     action.name,
                     "Async action handlers are not supported by ActionDispatcher.execute; use an async dispatcher.",
