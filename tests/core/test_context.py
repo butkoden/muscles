@@ -1,3 +1,6 @@
+import asyncio
+import inspect
+
 from .app.instance import App
 from .app.instance import Strategy
 from muscles.core.core import BaseStrategy, Context
@@ -46,6 +49,14 @@ class StrategyEntryContext(BaseStrategy):
 class StrategyWithoutEntrypointContext(BaseStrategy):
     def execute(self, value, error_handler=None, container=None):
         return value
+
+
+class StrategyAwaitable(BaseStrategy):
+    def execute(self, *args, **kwargs):
+        async def result():
+            return kwargs["value"]
+
+        return result()
 
 
 def test_context0():
@@ -119,3 +130,12 @@ def test_context_keeps_compatibility_with_strategies_without_entrypoint_context(
 
     app = _App()
     assert app.context.execute("ok") == "ok"
+
+
+def test_context_execute_returns_awaitable_without_awaiting_it():
+    context = Context(StrategyAwaitable)
+
+    result = context.execute(value="async-ok")
+
+    assert inspect.isawaitable(result)
+    assert asyncio.run(result) == "async-ok"

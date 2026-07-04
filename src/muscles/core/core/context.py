@@ -17,7 +17,7 @@ class BaseStrategy(ABC):
     """
 
     @abstractmethod
-    def execute(self, *args, **kwargs):
+    def execute(self, *args, **kwargs) -> Any:
         pass
 
 
