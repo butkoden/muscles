@@ -7,6 +7,9 @@ This is the canonical entry point for Muscles core documentation. Topic-specific
 documents are still kept as deeper references, but new core behavior should be
 reflected here and in the Russian version.
 
+Public symbols exported by `muscles` / `muscles.core` are documented in
+[public-api.md](public-api.md).
+
 ## What Muscles Core Provides
 
 `muscles` is the shared core package for the Muscles ecosystem. It contains:
@@ -452,6 +455,7 @@ PYTHONPATH=../muscles/src:../muscles-asgi/src:../muscles-wsgi/src:../muscles-cli
 - [installation.md](installation.md)
 - [naming.md](naming.md)
 - [positioning.md](positioning.md)
+- [public-api.md](public-api.md)
 - [production-deploy.md](production-deploy.md)
 - [roadmap-baseline.md](roadmap-baseline.md)
 - [schema.md](schema.md)

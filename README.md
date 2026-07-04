@@ -115,6 +115,8 @@ Core documentation:
 
 - English: [docs/doc.md](docs/doc.md)
 - Russian: [docs/doc.ru.md](docs/doc.ru.md)
+- Public API reference: [docs/public-api.md](docs/public-api.md)
+- Справочник публичного API: [docs/public-api.ru.md](docs/public-api.ru.md)
 
 ## Naming
 
