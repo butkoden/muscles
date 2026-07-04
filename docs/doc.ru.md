@@ -22,6 +22,9 @@
 
 Пакеты `muscles-asgi`, `muscles-wsgi` и `muscles-cli` проецируют эти контракты
 ядра в конкретные протоколы.
+Пакеты `muscles-ai`, `muscles-documents`, `muscles-sql` и `muscles-otel`
+добавляют переиспользуемые возможности фреймворка, не меняя общую модель
+приложения.
 
 ## Справочник по репозиториям экосистемы
 
@@ -66,6 +69,15 @@ golden path.
 наблюдаемости. Используйте его для OpenTelemetry-инструментации, трассировок и
 метрик вокруг ядра и рантаймов.
 
+[`muscles-documents`](https://github.com/butkoden/muscles-documents) -
+расширение для документов. Используйте его для загрузки локальных,
+markdown/text-документов, парсинга, чанкинга и планирования синхронизации через
+Muscles actions.
+
+[`muscles-ai`](https://github.com/butkoden/muscles-ai) - AI/RAG-расширение.
+Используйте его для read-only ответов на вопросы, retrieval и AI-диагностики
+через ту же модель actions/dispatcher, что используют протокольные проекции.
+
 ### Примеры, совместимость и поддерживающие репозитории
 
 [`muscular-example`](https://github.com/butkoden/muscular-example) - пример
@@ -84,6 +96,7 @@ ASGI-пакет для совместимости и исторических п
 Когда добавляется новая функция ядра, здесь нужно описывать независимый от
 протокола контракт, а примеры для конкретного рантайма добавлять в репозиторий
 расширения, который этот контракт исполняет.
+Подробная карта ответственности: [repositories.md](repositories.md).
 
 ## Установка
 
@@ -98,6 +111,15 @@ pip install git+https://github.com/butkoden/muscles.git
 ```bash
 pip install git+https://github.com/butkoden/muscles-asgi.git
 pip install git+https://github.com/butkoden/muscles-wsgi.git
+```
+
+Для переиспользуемых возможностей фреймворка подключайте extension-пакеты:
+
+```bash
+pip install git+https://github.com/butkoden/muscles-documents.git
+pip install git+https://github.com/butkoden/muscles-ai.git
+pip install git+https://github.com/butkoden/muscles-sql.git
+pip install git+https://github.com/butkoden/muscles-otel.git
 ```
 
 Подробнее: [installation.md](installation.md).
@@ -349,15 +371,24 @@ PYTHONPATH=src python3 -m pytest
 Для пакетов экосистемы из соседних локальных копий:
 
 ```bash
-PYTHONPATH=../muscles/src:src python3 -m pytest
+PYTHONPATH=../muscles/src:../muscles-asgi/src:../muscles-wsgi/src:../muscles-cli/src:../muscles-jsonrpc/src:../muscles-sse/src:../muscles-mcp/src:../muscles-sql/src:../muscles-otel/src:../muscles-documents/src:../muscles-ai/src:src python3 -m pytest
 ```
 
 ## Глубокие справочники
 
-- Документация рантайм-репозиториев:
+- Карта репозиториев:
+  - [repositories.md](repositories.md)
+- Документация рантаймов и расширений:
   - [`muscles-asgi`](https://github.com/butkoden/muscles-asgi)
   - [`muscles-wsgi`](https://github.com/butkoden/muscles-wsgi)
   - [`muscles-cli`](https://github.com/butkoden/muscles-cli)
+  - [`muscles-jsonrpc`](https://github.com/butkoden/muscles-jsonrpc)
+  - [`muscles-sse`](https://github.com/butkoden/muscles-sse)
+  - [`muscles-mcp`](https://github.com/butkoden/muscles-mcp)
+  - [`muscles-sql`](https://github.com/butkoden/muscles-sql)
+  - [`muscles-otel`](https://github.com/butkoden/muscles-otel)
+  - [`muscles-documents`](https://github.com/butkoden/muscles-documents)
+  - [`muscles-ai`](https://github.com/butkoden/muscles-ai)
 - [architecture.md](architecture.md)
 - [backend-framework.md](backend-framework.md)
 - [backend-framework.ru.md](backend-framework.ru.md)
