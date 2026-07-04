@@ -7,6 +7,9 @@
 остаются глубокими справочниками, но новое поведение ядра должно отражаться
 здесь и в английской версии.
 
+Публичные символы, экспортируемые из `muscles` / `muscles.core`, описаны в
+[public-api.ru.md](public-api.ru.md).
+
 ## Что дает ядро Muscles
 
 `muscles` - общий пакет ядра экосистемы Muscles. В нём находятся:
@@ -401,6 +404,7 @@ PYTHONPATH=../muscles/src:../muscles-asgi/src:../muscles-wsgi/src:../muscles-cli
 - [installation.md](installation.md)
 - [naming.md](naming.md)
 - [positioning.md](positioning.md)
+- [public-api.ru.md](public-api.ru.md)
 - [production-deploy.md](production-deploy.md)
 - [roadmap-baseline.md](roadmap-baseline.md)
 - [schema.md](schema.md)
