@@ -5,7 +5,7 @@ This page defines canonical installation paths for the Muscles ecosystem.
 ## Current Distribution Status
 
 - Public framework name: `Muscles`.
-- Technical package names: `muscles`, `muscles-asgi`, `muscles-wsgi`, `muscles-cli`.
+- Technical package names follow the `muscles-*` ecosystem convention.
 - Current canonical install method: GitHub source installs.
 - Target state: publish stable package releases to PyPI.
 
@@ -43,6 +43,29 @@ pip install git+https://github.com/butkoden/muscles-cli.git
 
 Use this for command routing and console strategy support.
 
+### Protocol Projections
+
+```bash
+pip install git+https://github.com/butkoden/muscles-jsonrpc.git
+pip install git+https://github.com/butkoden/muscles-sse.git
+pip install git+https://github.com/butkoden/muscles-mcp.git
+```
+
+Use these when an application action model must be exposed through JSON-RPC,
+Server-Sent Events or Model Context Protocol.
+
+### Framework Extensions
+
+```bash
+pip install git+https://github.com/butkoden/muscles-sql.git
+pip install git+https://github.com/butkoden/muscles-otel.git
+pip install git+https://github.com/butkoden/muscles-documents.git
+pip install git+https://github.com/butkoden/muscles-ai.git
+```
+
+Use these for SQL persistence, observability, document ingestion and read-only
+AI/RAG flows that should remain transport-agnostic.
+
 ### Full/Development Setup (All Repositories)
 
 ```bash
@@ -50,12 +73,20 @@ git clone https://github.com/butkoden/muscles.git
 git clone https://github.com/butkoden/muscles-asgi.git
 git clone https://github.com/butkoden/muscles-wsgi.git
 git clone https://github.com/butkoden/muscles-cli.git
+git clone https://github.com/butkoden/muscles-jsonrpc.git
+git clone https://github.com/butkoden/muscles-sse.git
+git clone https://github.com/butkoden/muscles-mcp.git
+git clone https://github.com/butkoden/muscles-sql.git
+git clone https://github.com/butkoden/muscles-otel.git
+git clone https://github.com/butkoden/muscles-documents.git
+git clone https://github.com/butkoden/muscles-ai.git
+git clone https://github.com/butkoden/muscles-benchmarks.git
 ```
 
 Run tests from each repository with sibling `src` paths on `PYTHONPATH`:
 
 ```bash
-PYTHONPATH=../muscles/src:../muscles-wsgi/src:../muscles-asgi/src:../muscles-cli/src python -m pytest -q
+PYTHONPATH=../muscles/src:../muscles-wsgi/src:../muscles-asgi/src:../muscles-cli/src:../muscles-jsonrpc/src:../muscles-sse/src:../muscles-mcp/src:../muscles-sql/src:../muscles-otel/src:../muscles-documents/src:../muscles-ai/src python -m pytest -q
 ```
 
 ## Packaging Decision For Now
@@ -83,6 +114,15 @@ Planned follow-up:
   - README points to this install matrix.
   - Package description is non-empty and aligned with Muscles naming.
   - `muscles new` templates should consume this matrix as source of truth.
+- Protocol packages (`muscles-jsonrpc`, `muscles-sse`, `muscles-mcp`):
+  - README points to core and explains which projection it owns.
+  - Public behavior is discovered from core actions/inspect contracts.
+- Extension packages (`muscles-sql`, `muscles-otel`, `muscles-documents`, `muscles-ai`):
+  - README points to core and explains which framework capability it owns.
+  - Capabilities stay transport-agnostic and expose behavior through actions or explicit runtime hooks.
+- `muscles-benchmarks`:
+  - README documents which package owns each benchmark surface.
+  - Regression reports include core, runtime, protocol and extension coverage.
 
 ## Notes For `muscles new`
 

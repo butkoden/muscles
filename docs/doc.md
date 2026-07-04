@@ -22,6 +22,9 @@ reflected here and in the Russian version.
 
 Runtime packages such as `muscles-asgi`, `muscles-wsgi` and `muscles-cli`
 project these core contracts into concrete protocols.
+Extension packages such as `muscles-ai`, `muscles-documents`, `muscles-sql`
+and `muscles-otel` add reusable framework capabilities without changing the
+core application model.
 
 ## Ecosystem Repository Reference
 
@@ -64,6 +67,14 @@ stay outside protocol runtimes.
 extension. Use it for OpenTelemetry-style instrumentation, traces and metrics
 around core/runtime behavior.
 
+[`muscles-documents`](https://github.com/butkoden/muscles-documents) is the
+document ingestion extension. Use it for local/markdown/text document loading,
+parsing, chunking and sync planning behind Muscles actions.
+
+[`muscles-ai`](https://github.com/butkoden/muscles-ai) is the AI/RAG extension.
+Use it for read-only question answering, retrieval and AI diagnostics over the
+same action/dispatcher model used by protocol projections.
+
 ### Examples, Compatibility And Support Repositories
 
 [`muscular-example`](https://github.com/butkoden/muscular-example) is an
@@ -82,6 +93,7 @@ on `muscles-asgi`.
 
 When adding a core feature, document the protocol-neutral contract here and add
 runtime-specific examples in the extension repository that executes it.
+Detailed ownership map: [repositories.md](repositories.md).
 
 ## Installation
 
@@ -96,6 +108,15 @@ Use runtime packages when you need a web/API transport:
 ```bash
 pip install git+https://github.com/butkoden/muscles-asgi.git
 pip install git+https://github.com/butkoden/muscles-wsgi.git
+```
+
+Use extension packages when you need reusable framework capabilities:
+
+```bash
+pip install git+https://github.com/butkoden/muscles-documents.git
+pip install git+https://github.com/butkoden/muscles-ai.git
+pip install git+https://github.com/butkoden/muscles-sql.git
+pip install git+https://github.com/butkoden/muscles-otel.git
 ```
 
 More detail: [installation.md](installation.md).
@@ -401,15 +422,24 @@ PYTHONPATH=src python3 -m pytest
 When testing ecosystem packages from sibling checkouts:
 
 ```bash
-PYTHONPATH=../muscles/src:src python3 -m pytest
+PYTHONPATH=../muscles/src:../muscles-asgi/src:../muscles-wsgi/src:../muscles-cli/src:../muscles-jsonrpc/src:../muscles-sse/src:../muscles-mcp/src:../muscles-sql/src:../muscles-otel/src:../muscles-documents/src:../muscles-ai/src:src python3 -m pytest
 ```
 
 ## Deep References
 
-- Ecosystem runtime docs:
+- Ecosystem repository map:
+  - [repositories.md](repositories.md)
+- Ecosystem runtime and extension docs:
   - [`muscles-asgi`](https://github.com/butkoden/muscles-asgi)
   - [`muscles-wsgi`](https://github.com/butkoden/muscles-wsgi)
   - [`muscles-cli`](https://github.com/butkoden/muscles-cli)
+  - [`muscles-jsonrpc`](https://github.com/butkoden/muscles-jsonrpc)
+  - [`muscles-sse`](https://github.com/butkoden/muscles-sse)
+  - [`muscles-mcp`](https://github.com/butkoden/muscles-mcp)
+  - [`muscles-sql`](https://github.com/butkoden/muscles-sql)
+  - [`muscles-otel`](https://github.com/butkoden/muscles-otel)
+  - [`muscles-documents`](https://github.com/butkoden/muscles-documents)
+  - [`muscles-ai`](https://github.com/butkoden/muscles-ai)
 - [architecture.md](architecture.md)
 - [backend-framework.md](backend-framework.md)
 - [backend-framework.ru.md](backend-framework.ru.md)

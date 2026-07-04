@@ -49,6 +49,44 @@ behavior and OpenAPI metadata.
 - `muscles-wsgi` - WSGI runtime, pages, REST API and Swagger UI.
 - `muscles-asgi` - ASGI runtime with the same routing and REST API model.
 - `muscles-cli` - console command strategy built on the same route/group idea.
+- `muscles-jsonrpc` - JSON-RPC projection for core actions.
+- `muscles-sse` - Server-Sent Events projection for streaming actions.
+- `muscles-mcp` - Model Context Protocol projection for AI tools.
+- `muscles-sql` - SQL persistence helpers, named connections and diagnostics.
+- `muscles-otel` - OpenTelemetry lifecycle instrumentation.
+- `muscles-documents` - document loading, parsing, chunking and sync actions.
+- `muscles-ai` - read-only AI/RAG actions and runtime contracts.
+- `muscles-benchmarks` - benchmark and regression suite for the ecosystem.
+- `muscular-example` - layered learning examples for Muscles applications.
+
+## Repository Map
+
+Core and runtimes:
+
+- [`muscles`](https://github.com/butkoden/muscles) - framework core and canonical documentation.
+- [`muscles-asgi`](https://github.com/butkoden/muscles-asgi) - ASGI HTTP/API runtime.
+- [`muscles-wsgi`](https://github.com/butkoden/muscles-wsgi) - WSGI HTTP/API runtime.
+- [`muscles-cli`](https://github.com/butkoden/muscles-cli) - CLI runtime, project scaffolding and inspection commands.
+
+Protocol projections:
+
+- [`muscles-jsonrpc`](https://github.com/butkoden/muscles-jsonrpc) - JSON-RPC 2.0 projection over actions.
+- [`muscles-sse`](https://github.com/butkoden/muscles-sse) - SSE delivery for `StreamResult` action output.
+- [`muscles-mcp`](https://github.com/butkoden/muscles-mcp) - MCP tools/resources generated from Muscles contracts.
+
+Framework extensions:
+
+- [`muscles-sql`](https://github.com/butkoden/muscles-sql) - SQL layer for models, repositories, transactions and named SQL connections.
+- [`muscles-otel`](https://github.com/butkoden/muscles-otel) - optional OpenTelemetry instrumentation for lifecycle and action execution.
+- [`muscles-documents`](https://github.com/butkoden/muscles-documents) - document source ingestion, parsing, chunking and sync planning.
+- [`muscles-ai`](https://github.com/butkoden/muscles-ai) - AI/RAG actions that can use document and data integrations.
+
+Support repositories:
+
+- [`muscles-benchmarks`](https://github.com/butkoden/muscles-benchmarks) - golden-path benchmarks and regression checks.
+- [`muscular-example`](https://github.com/butkoden/muscular-example) - layered example application.
+- [`muscles-landing`](https://github.com/butkoden/muscles-landing) - product site/application built on Muscles.
+- [`muscular-asgi`](https://github.com/butkoden/muscular-asgi) - deprecated ASGI compatibility package.
 
 ## Installation
 
@@ -61,9 +99,17 @@ Installation matrix:
 - ASGI runtime: `pip install git+https://github.com/butkoden/muscles-asgi.git`
 - WSGI runtime: `pip install git+https://github.com/butkoden/muscles-wsgi.git`
 - CLI tooling: `pip install git+https://github.com/butkoden/muscles-cli.git`
+- JSON-RPC projection: `pip install git+https://github.com/butkoden/muscles-jsonrpc.git`
+- SSE projection: `pip install git+https://github.com/butkoden/muscles-sse.git`
+- MCP projection: `pip install git+https://github.com/butkoden/muscles-mcp.git`
+- SQL extension: `pip install git+https://github.com/butkoden/muscles-sql.git`
+- OTel extension: `pip install git+https://github.com/butkoden/muscles-otel.git`
+- documents extension: `pip install git+https://github.com/butkoden/muscles-documents.git`
+- AI extension: `pip install git+https://github.com/butkoden/muscles-ai.git`
 - full/dev (source checkouts): clone all repositories and use `PYTHONPATH` with sibling `src` paths.
 
 More detail: [docs/installation.md](docs/installation.md).
+Repository ownership map: [docs/repositories.md](docs/repositories.md).
 
 Core documentation:
 
@@ -306,5 +352,5 @@ PYTHONPATH=src python -m pytest -q
 When testing an integration app that uses all packages from sibling checkouts:
 
 ```bash
-PYTHONPATH=../muscles/src:../muscles-wsgi/src:../muscles-asgi/src:../muscles-cli/src python -m pytest -q
+PYTHONPATH=../muscles/src:../muscles-wsgi/src:../muscles-asgi/src:../muscles-cli/src:../muscles-jsonrpc/src:../muscles-sse/src:../muscles-mcp/src:../muscles-sql/src:../muscles-otel/src:../muscles-documents/src:../muscles-ai/src python -m pytest -q
 ```
