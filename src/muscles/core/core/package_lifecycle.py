@@ -84,8 +84,10 @@ def install_package(app, config: Any, package: Any):
         )
 
         with telemetry.span("muscles.package.runtime.build", **attributes):
-            runtime = call_package_hook(
-                package.build_runtime,
+            runtime = call_optional_package_hook(
+                package,
+                "build_runtime",
+                default=None,
                 ordered_names=("app", "config"),
                 values={"app": app, "config": package_config},
             )
