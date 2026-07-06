@@ -3,6 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
+from .generator import GeneratorRegistry
+
 
 @dataclass
 class ApplicationRegistry:
@@ -13,6 +15,10 @@ class ApplicationRegistry:
     cli: list[Any] = field(default_factory=list)
     actions: list[Any] = field(default_factory=list)
     sql: list[Any] = field(default_factory=list)
+    packages: dict[str, dict[str, Any]] = field(default_factory=dict)
+    inspection_providers: dict[str, Any] = field(default_factory=dict)
+    doctor_providers: dict[str, Any] = field(default_factory=dict)
+    generator_registry: GeneratorRegistry = field(default_factory=GeneratorRegistry)
     openapi: dict[str, Any] = field(default_factory=dict)
     _actions_by_name: dict[str, Any] = field(default_factory=dict)
 
@@ -48,6 +54,18 @@ class ApplicationRegistry:
 
     def add_sql(self, item: Any) -> None:
         self.sql.append(item)
+
+    def add_package(self, namespace: str, contract: dict[str, Any]) -> None:
+        self.packages[namespace] = dict(contract)
+
+    def add_inspection_provider(self, namespace: str, provider: Any) -> None:
+        self.inspection_providers[namespace] = provider
+
+    def add_doctor_provider(self, namespace: str, provider: Any) -> None:
+        self.doctor_providers[namespace] = provider
+
+    def add_generator_provider(self, provider: Any) -> None:
+        self.generator_registry.register(provider)
 
     def emit_event(self, key: str, payload: Any) -> None:
         if key not in self.events:

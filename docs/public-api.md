@@ -179,6 +179,47 @@ Legacy dependency APIs remain public for compatibility:
 - `inject` - decorator that injects dependencies by annotation or default value.
 - `DependencyScope` - request scope object created by `DependencyContainer.create_scope()`.
 
+## Package Lifecycle
+
+Framework packages use `install_package(app, config, package)` to register
+runtime services, actions, inspection capabilities, doctor checks, generator
+providers and neutral telemetry spans through one core contract.
+
+```python
+from muscles import MusclesPackage, PackageService, install_package
+
+
+class AiPackage(MusclesPackage):
+    namespace = "ai"
+
+    def build_runtime(self, app, config):
+        return AiRuntime(config)
+
+    def services(self, app, runtime):
+        return [PackageService(AiRuntime, runtime)]
+
+    def actions(self, app, runtime, *, config):
+        return [{"name": "ai.ask", "handler": self.ask, "transports": ["cli", "mcp"]}]
+
+
+def init_package(app, config):
+    return install_package(app, config, AiPackage())
+```
+
+Public lifecycle symbols:
+
+- `MusclesPackage` - base package hook contract.
+- `PackageService` - DI service declaration for package runtimes.
+- `install_package` - universal installer.
+- `doctor_application` - aggregate package doctor checks.
+- `TelemetryProvider`, `NoopTelemetry`, `resolve_telemetry` - neutral telemetry surface.
+- `resolve_package_config`, `ensure_container`, `sanitize_payload`.
+
+`ApplicationRegistry` stores package metadata and providers only. Runtime
+clients stay in `DependencyContainer` or package-owned lazy managers.
+
+More detail: [package-lifecycle.md](package-lifecycle.md).
+
 ## Backend Pipeline
 
 `BackendPipeline` is the transport-neutral execution helper used by ASGI/WSGI

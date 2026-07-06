@@ -136,6 +136,47 @@ Scopes:
 Legacy API остаётся публичным для совместимости: `DependencyStorage`,
 `Dependency`, `inject`, `DependencyScope`.
 
+## Package Lifecycle
+
+Framework packages подключаются через `install_package(app, config, package)`.
+Core одинаково регистрирует runtime services, actions, inspection capabilities,
+doctor checks, generator providers и neutral telemetry spans.
+
+```python
+from muscles import MusclesPackage, PackageService, install_package
+
+
+class AiPackage(MusclesPackage):
+    namespace = "ai"
+
+    def build_runtime(self, app, config):
+        return AiRuntime(config)
+
+    def services(self, app, runtime):
+        return [PackageService(AiRuntime, runtime)]
+
+    def actions(self, app, runtime, *, config):
+        return [{"name": "ai.ask", "handler": self.ask, "transports": ["cli", "mcp"]}]
+
+
+def init_package(app, config):
+    return install_package(app, config, AiPackage())
+```
+
+Публичные lifecycle-типы:
+
+- `MusclesPackage` - базовый контракт package hooks.
+- `PackageService` - декларация DI service для runtime пакета.
+- `install_package` - универсальная установка пакета.
+- `doctor_application` - сбор doctor checks по пакетам.
+- `TelemetryProvider`, `NoopTelemetry`, `resolve_telemetry` - нейтральная telemetry surface.
+- `resolve_package_config`, `ensure_container`, `sanitize_payload`.
+
+`ApplicationRegistry` хранит только metadata и providers. Runtime clients живут
+в `DependencyContainer` или package-owned lazy managers.
+
+Подробнее: [package-lifecycle.md](package-lifecycle.md).
+
 ## Backend Pipeline
 
 `BackendPipeline` - общий backend execution helper для ASGI/WSGI. Он связывает
