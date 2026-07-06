@@ -131,6 +131,14 @@ class PartialPackage:
         return [PackageService(DemoRuntime, runtime)]
 
 
+class NoRuntimePackage:
+    namespace = "no_runtime"
+
+    def services(self, app, runtime, config) -> Any:
+        del app, config
+        return {DemoRuntime: DemoRuntime(endpoint="no-runtime")}
+
+
 class MissingNamespacePackage:
     def build_runtime(self, app, config) -> Any:
         return DemoRuntime(endpoint="missing")
@@ -215,6 +223,16 @@ def test_install_package_accepts_partial_package_without_optional_hooks():
     assert contract["packages"] == [{"namespace": "partial", "name": "PartialPackage"}]
     assert contract["capabilities"] == {}
     assert doctor_application(app) == {"status": "ok", "packages": {}}
+
+
+def test_install_package_accepts_package_without_runtime_hook():
+    app = DemoApp()
+
+    runtime = install_package(app, {}, NoRuntimePackage())
+
+    assert runtime is None
+    assert app.container.resolve(DemoRuntime).endpoint == "no-runtime"
+    assert inspect_application(app)["packages"] == [{"namespace": "no_runtime", "name": "NoRuntimePackage"}]
 
 
 def test_install_package_requires_non_empty_namespace():

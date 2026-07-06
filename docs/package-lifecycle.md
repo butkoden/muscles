@@ -106,9 +106,10 @@ Compatibility exports are available from:
 - `muscles.lifecycle`
 
 Packages do not have to subclass `MusclesPackage` when they follow the same
-duck-typed contract. `namespace` and `build_runtime(...)` are required; missing
-optional hooks are treated as safe defaults:
+duck-typed contract. `namespace` is required; missing hooks are treated as safe
+defaults:
 
+- `build_runtime` -> `None`
 - `services` -> `[]`
 - `actions` -> `[]`
 - `inspection_provider` -> `None`
@@ -124,14 +125,16 @@ Each hook has one job:
 
 | Hook | Purpose | Stored In |
 | --- | --- | --- |
-| `build_runtime(app, config)` | Build the package runtime object. | Returned from `install_package(...)` |
+| `build_runtime(app, config)` | Build the package runtime object when the package needs one. | Returned from `install_package(...)`; `None` when omitted |
 | `services(app, runtime, config)` | Register live services for app code to resolve. | `DependencyContainer` |
 | `actions(app, runtime, config)` | Register protocol-neutral callable contracts. | `ApplicationRegistry.actions` |
 | `inspection_provider(app, runtime, config)` | Expose safe capability data for tooling. | `ApplicationRegistry.inspection_providers` |
 | `doctor_provider(app, runtime, config)` | Expose health/readiness checks. | `ApplicationRegistry.doctor_providers` |
 | `generator_providers(app, runtime, config)` | Add code/document generation providers. | `ApplicationRegistry.generator_registry` |
 
-All hooks may be omitted except `build_runtime(...)`.
+All hooks may be omitted. A package without `build_runtime(...)` can still
+register services, actions, inspection providers, doctor providers or generator
+providers; those hooks receive `runtime=None`.
 
 ## Runtime State Rule
 

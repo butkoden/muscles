@@ -217,6 +217,8 @@ Public lifecycle symbols:
 
 `ApplicationRegistry` stores package metadata and providers only. Runtime
 clients stay in `DependencyContainer` or package-owned lazy managers.
+Only `namespace` is required for duck-typed packages; omitted hooks, including
+`build_runtime(...)`, fall back to safe defaults.
 
 More detail: [package-lifecycle.md](package-lifecycle.md).
 
