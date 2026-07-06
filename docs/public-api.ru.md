@@ -174,6 +174,8 @@ def init_package(app, config):
 
 `ApplicationRegistry` хранит только metadata и providers. Runtime clients живут
 в `DependencyContainer` или package-owned lazy managers.
+Для duck-typed packages обязателен только `namespace`; отсутствующие hooks,
+включая `build_runtime(...)`, получают безопасные значения по умолчанию.
 
 Подробнее: [package-lifecycle.md](package-lifecycle.md).
 
