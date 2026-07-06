@@ -4,8 +4,10 @@
 `muscles-ai`, `muscles-documents`, `muscles-sql`, protocol projections and
 future data/storage packages.
 
-The goal is to keep package-specific code small while core performs the common
-installation mechanics:
+Use this API when a package needs to add framework capabilities to one Muscles
+application: runtime services, protocol-neutral actions, inspection data,
+doctor checks or code-generation providers. The package stays focused on its
+own domain while core performs the shared installation mechanics:
 
 1. Resolve package config.
 2. Build runtime state.
@@ -15,6 +17,34 @@ installation mechanics:
 6. Register doctor checks.
 7. Register generator providers.
 8. Emit neutral telemetry spans.
+
+## Quick Mental Model
+
+There are two different places involved in package installation:
+
+- `DependencyContainer` stores live runtime objects: clients, pools, tracers,
+  repositories and package managers.
+- `ApplicationRegistry` stores the application contract: routes, actions,
+  package metadata, inspection providers, doctor providers and generator
+  providers.
+
+That split is intentional. Runtime code resolves services from the container.
+Developer tooling reads the registry through `inspect_application(app)`,
+`doctor_application(app)` and generators. The registry should explain the app;
+it should not become a service locator for live objects.
+
+## When To Use A Package
+
+Create a `MusclesPackage` when an integration must be installed consistently
+across runtimes or inspected by tooling. Common examples:
+
+- a storage package that registers repositories and health checks;
+- an observability package that registers a neutral telemetry provider;
+- a documents or AI package that registers actions for HTTP, CLI and MCP;
+- a protocol package that reads existing actions and exposes them elsewhere.
+
+Do not use a package lifecycle just to call one helper function. For simple
+application-local wiring, regular Python code is clearer.
 
 ## Public API
 
@@ -51,6 +81,23 @@ def init_package(app, config):
     return install_package(app, config, DocumentsPackage())
 ```
 
+Applications install the package during app construction or bootstrap:
+
+```python
+from documents_package import DocumentsPackage
+from muscles import doctor_application, inspect_application, install_package
+
+app = App()
+documents = install_package(
+    app,
+    {"sources": ["repo"], "chunk_size": 800},
+    DocumentsPackage(),
+)
+
+contract = inspect_application(app)
+doctor = doctor_application(app)
+```
+
 Compatibility exports are available from:
 
 - `muscles`
@@ -71,6 +118,21 @@ optional hooks are treated as safe defaults:
 `inspect_application(app)["packages"]` reports the original package class name,
 even when the package uses this partial contract.
 
+## Hook Roles
+
+Each hook has one job:
+
+| Hook | Purpose | Stored In |
+| --- | --- | --- |
+| `build_runtime(app, config)` | Build the package runtime object. | Returned from `install_package(...)` |
+| `services(app, runtime, config)` | Register live services for app code to resolve. | `DependencyContainer` |
+| `actions(app, runtime, config)` | Register protocol-neutral callable contracts. | `ApplicationRegistry.actions` |
+| `inspection_provider(app, runtime, config)` | Expose safe capability data for tooling. | `ApplicationRegistry.inspection_providers` |
+| `doctor_provider(app, runtime, config)` | Expose health/readiness checks. | `ApplicationRegistry.doctor_providers` |
+| `generator_providers(app, runtime, config)` | Add code/document generation providers. | `ApplicationRegistry.generator_registry` |
+
+All hooks may be omitted except `build_runtime(...)`.
+
 ## Runtime State Rule
 
 `ApplicationRegistry` stores only metadata and providers:
@@ -84,6 +146,23 @@ even when the package uses this partial contract.
 Runtime clients, DB connections, vector clients, LLM clients and other live
 objects must live in `DependencyContainer` or package-owned lazy managers, not
 inside `ApplicationRegistry`.
+
+Application code should consume a package through the container or through the
+runtime returned by `install_package(...)`:
+
+```python
+runtime = install_package(app, config, DocumentsPackage())
+same_runtime = app.container.resolve(DocumentsRuntime)
+```
+
+Tooling should consume the same package through inspection and doctor data:
+
+```python
+from muscles import doctor_application, inspect_application
+
+capabilities = inspect_application(app)["capabilities"]
+health = doctor_application(app)
+```
 
 ## Config Resolution
 
