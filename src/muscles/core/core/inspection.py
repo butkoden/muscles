@@ -6,6 +6,7 @@ from .runtime_mode import app_runtime_mode
 from .context import Context
 from .registry import get_application_registry
 from .actions import ApplicationContract
+from .package_lifecycle import collect_package_capabilities, collect_packages
 from ..route_contract import CANONICAL_ROUTES
 
 
@@ -173,4 +174,11 @@ def inspect_application(app=None, include_sensitive: bool = False) -> dict[str, 
             },
         },
     })
+    if app is not None:
+        contract.update({
+            "packages": collect_packages(app),
+            "capabilities": collect_package_capabilities(app),
+        })
+    else:
+        contract.update({"packages": [], "capabilities": {}})
     return contract

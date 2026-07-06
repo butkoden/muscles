@@ -17,6 +17,20 @@ from .runtime_mode import is_production
 from .inspection import inspect_application
 from .generator import GenerationRequest, GeneratorProvider, GeneratorRegistry
 from .registry import ApplicationRegistry, get_application_registry
+from .package_lifecycle import (
+    MusclesPackage,
+    NoopTelemetry,
+    PackageService,
+    TelemetryProvider,
+    collect_package_capabilities,
+    collect_packages,
+    doctor_application,
+    ensure_container,
+    install_package,
+    resolve_package_config,
+    resolve_telemetry,
+    sanitize_payload,
+)
 from .actions import (
     ActionContext,
     ActionContract,
@@ -90,4 +104,16 @@ __all__ = (
     "GenerationRequest",
     "GeneratorProvider",
     "GeneratorRegistry",
+    "MusclesPackage",
+    "NoopTelemetry",
+    "PackageService",
+    "TelemetryProvider",
+    "collect_package_capabilities",
+    "collect_packages",
+    "doctor_application",
+    "ensure_container",
+    "install_package",
+    "resolve_package_config",
+    "resolve_telemetry",
+    "sanitize_payload",
 )

@@ -10,6 +10,9 @@ from .core import RuntimeMode, resolve_runtime_mode, app_runtime_mode, is_develo
 from .core import inspect_application
 from .core import GenerationRequest, GeneratorProvider, GeneratorRegistry
 from .core import ApplicationRegistry, get_application_registry
+from .core import MusclesPackage, NoopTelemetry, PackageService, TelemetryProvider
+from .core import collect_package_capabilities, collect_packages, doctor_application, ensure_container
+from .core import install_package, resolve_package_config, resolve_telemetry, sanitize_payload
 from .core import ActionContext, ActionContract, ActionDispatcher, ActionResult, ApplicationContract
 from .core import ActionError, ActionExecutionError, ActionNotFound, ActionPermissionDenied, ActionValidationError
 from .core import StreamEvent, StreamResult, coerce_stream_event, stream_events
@@ -218,6 +221,18 @@ __all__ = (
     "GenerationRequest",
     "GeneratorProvider",
     "GeneratorRegistry",
+    "MusclesPackage",
+    "NoopTelemetry",
+    "PackageService",
+    "TelemetryProvider",
+    "collect_package_capabilities",
+    "collect_packages",
+    "doctor_application",
+    "ensure_container",
+    "install_package",
+    "resolve_package_config",
+    "resolve_telemetry",
+    "sanitize_payload",
     "BaseResponse",
     "BytesResponse",
     "FileResponse",
