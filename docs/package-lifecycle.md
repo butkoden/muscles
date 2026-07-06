@@ -58,6 +58,19 @@ Compatibility exports are available from:
 - `muscles.core.lifecycle`
 - `muscles.lifecycle`
 
+Packages do not have to subclass `MusclesPackage` when they follow the same
+duck-typed contract. `namespace` and `build_runtime(...)` are required; missing
+optional hooks are treated as safe defaults:
+
+- `services` -> `[]`
+- `actions` -> `[]`
+- `inspection_provider` -> `None`
+- `doctor_provider` -> `None`
+- `generator_providers` -> `[]`
+
+`inspect_application(app)["packages"]` reports the original package class name,
+even when the package uses this partial contract.
+
 ## Runtime State Rule
 
 `ApplicationRegistry` stores only metadata and providers:

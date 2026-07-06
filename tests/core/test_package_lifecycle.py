@@ -121,6 +121,21 @@ class KeywordConfigPackage(MusclesPackage):
         return []
 
 
+class PartialPackage:
+    namespace = "partial"
+
+    def build_runtime(self, app, config) -> Any:
+        return DemoRuntime(endpoint=config["endpoint"])
+
+    def services(self, runtime) -> Any:
+        return [PackageService(DemoRuntime, runtime)]
+
+
+class MissingNamespacePackage:
+    def build_runtime(self, app, config) -> Any:
+        return DemoRuntime(endpoint="missing")
+
+
 def test_install_package_registers_runtime_services_actions_inspection_doctor_and_generators():
     app = DemoApp()
 
@@ -188,3 +203,26 @@ def test_install_package_supports_keyword_only_config_hooks():
     runtime = install_package(app, {"endpoint": "keyword"}, KeywordConfigPackage())
 
     assert app.container.resolve(DemoRuntime) is runtime
+
+
+def test_install_package_accepts_partial_package_without_optional_hooks():
+    app = DemoApp()
+
+    runtime = install_package(app, {"endpoint": "partial"}, PartialPackage())
+
+    assert app.container.resolve(DemoRuntime) is runtime
+    contract = inspect_application(app)
+    assert contract["packages"] == [{"namespace": "partial", "name": "PartialPackage"}]
+    assert contract["capabilities"] == {}
+    assert doctor_application(app) == {"status": "ok", "packages": {}}
+
+
+def test_install_package_requires_non_empty_namespace():
+    app = DemoApp()
+
+    try:
+        install_package(app, {}, MissingNamespacePackage())
+    except ValueError as exc:
+        assert str(exc) == "Muscles package must define a non-empty namespace"
+    else:
+        raise AssertionError("install_package must reject packages without namespace")

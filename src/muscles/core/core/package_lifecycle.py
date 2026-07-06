@@ -65,7 +65,7 @@ class MusclesPackage:
         return []
 
 
-def install_package(app, config: Any, package: MusclesPackage):
+def install_package(app, config: Any, package: Any):
     namespace = package_namespace(package)
     package_config = resolve_package_config(app, package, config)
     container = ensure_container(app)
@@ -91,24 +91,30 @@ def install_package(app, config: Any, package: MusclesPackage):
             )
 
         with telemetry.span("muscles.package.services.register", **attributes):
-            services = call_package_hook(
-                package.services,
+            services = call_optional_package_hook(
+                package,
+                "services",
+                default=[],
                 ordered_names=("app", "runtime", "config"),
                 values={"app": app, "runtime": runtime, "config": package_config},
             )
             register_services(container, services)
 
         with telemetry.span("muscles.package.actions.register", **attributes):
-            actions = call_package_hook(
-                package.actions,
+            actions = call_optional_package_hook(
+                package,
+                "actions",
+                default=[],
                 ordered_names=("app", "runtime", "config"),
                 values={"app": app, "runtime": runtime, "config": package_config},
             )
             register_actions(app, actions)
 
         with telemetry.span("muscles.package.inspect.register", **attributes):
-            provider = call_package_hook(
-                package.inspection_provider,
+            provider = call_optional_package_hook(
+                package,
+                "inspection_provider",
+                default=None,
                 ordered_names=("app", "runtime", "config"),
                 values={"app": app, "runtime": runtime, "config": package_config},
             )
@@ -116,8 +122,10 @@ def install_package(app, config: Any, package: MusclesPackage):
                 registry.add_inspection_provider(namespace, provider)
 
         with telemetry.span("muscles.package.doctor.register", **attributes):
-            provider = call_package_hook(
-                package.doctor_provider,
+            provider = call_optional_package_hook(
+                package,
+                "doctor_provider",
+                default=None,
                 ordered_names=("app", "runtime", "config"),
                 values={"app": app, "runtime": runtime, "config": package_config},
             )
@@ -125,8 +133,10 @@ def install_package(app, config: Any, package: MusclesPackage):
                 registry.add_doctor_provider(namespace, provider)
 
         with telemetry.span("muscles.package.generators.register", **attributes):
-            providers = call_package_hook(
-                package.generator_providers,
+            providers = call_optional_package_hook(
+                package,
+                "generator_providers",
+                default=[],
                 ordered_names=("app", "runtime", "config"),
                 values={"app": app, "runtime": runtime, "config": package_config},
             )
@@ -134,6 +144,22 @@ def install_package(app, config: Any, package: MusclesPackage):
                 registry.add_generator_provider(provider)
 
     return runtime
+
+
+def call_optional_package_hook(
+    package: Any,
+    hook_name: str,
+    *,
+    default: Any,
+    ordered_names: tuple[str, ...],
+    values: dict[str, Any],
+):
+    hook = getattr(package, hook_name, None)
+    if hook is None:
+        return default
+    if not callable(hook):
+        raise TypeError(f"Package hook `{hook_name}` must be callable")
+    return call_package_hook(hook, ordered_names=ordered_names, values=values)
 
 
 def call_package_hook(hook, *, ordered_names: tuple[str, ...], values: dict[str, Any]):
