@@ -53,11 +53,38 @@ behavior and OpenAPI metadata.
 - `muscles-sse` - Server-Sent Events projection for streaming actions.
 - `muscles-mcp` - Model Context Protocol projection for AI tools.
 - `muscles-sql` - SQL persistence helpers, named connections and diagnostics.
-- `muscles-otel` - OpenTelemetry lifecycle instrumentation.
+- `muscles-otel` - optional lifecycle telemetry hooks and tracer provider.
 - `muscles-documents` - document loading, parsing, chunking and sync actions.
 - `muscles-ai` - read-only AI/RAG actions and runtime contracts.
 - `muscles-benchmarks` - benchmark and regression suite for the ecosystem.
 - `muscular-example` - layered learning examples for Muscles applications.
+
+## How Packages Fit Together
+
+`muscles` is the core contract. Runtime packages such as `muscles-asgi`,
+`muscles-wsgi` and `muscles-cli` project the same app model into a concrete
+transport. Extension packages such as `muscles-otel`, `muscles-sql`,
+`muscles-documents` and `muscles-ai` add services, actions and diagnostics
+through the package lifecycle:
+
+```python
+from muscles import install_package, inspect_application, doctor_application
+from muscles_otel import OtelPackage
+
+app = App()
+tracer = install_package(app, {"enabled": True}, OtelPackage())
+
+contract = inspect_application(app)
+doctor = doctor_application(app)
+```
+
+Use the `DependencyContainer` for live objects that app code resolves at
+runtime. Use `ApplicationRegistry` for metadata that tools can inspect: routes,
+actions, package capabilities, doctor checks and generator providers. In plain
+terms: the container is for running the app, the registry is for understanding
+the app.
+
+More detail: [docs/package-lifecycle.md](docs/package-lifecycle.md).
 
 ## Repository Map
 
@@ -77,7 +104,7 @@ Protocol projections:
 Framework extensions:
 
 - [`muscles-sql`](https://github.com/butkoden/muscles-sql) - SQL layer for models, repositories, transactions and named SQL connections.
-- [`muscles-otel`](https://github.com/butkoden/muscles-otel) - optional OpenTelemetry instrumentation for lifecycle and action execution.
+- [`muscles-otel`](https://github.com/butkoden/muscles-otel) - optional lifecycle telemetry hooks for package, strategy and action execution.
 - [`muscles-documents`](https://github.com/butkoden/muscles-documents) - document source ingestion, parsing, chunking and sync planning.
 - [`muscles-ai`](https://github.com/butkoden/muscles-ai) - AI/RAG actions that can use document and data integrations.
 
