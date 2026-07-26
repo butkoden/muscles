@@ -1,6 +1,6 @@
-# Muscles Core
+# Muscles Core (Release Candidate)
 
-Muscles is an experimental framework core. The core package contains the
+Muscles is the release-candidate framework core. The core package contains the
 application lifecycle, configuration, shared schema objects, routing tree and
 strategy interface. HTTP, ASGI and CLI packages reuse these primitives instead
 of implementing their own framework model.
