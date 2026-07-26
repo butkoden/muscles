@@ -64,6 +64,23 @@ def test_error_handler_priority_and_default():
     assert itinerary.get_current_error_handler(Err(500))["handler"] is default_handler
 
 
+def test_error_handler_registrations_are_isolated_between_itineraries():
+    first = _make_itinerary("critical-error-handler-isolation-first")
+    second = _make_itinerary("critical-error-handler-isolation-second")
+
+    def first_default(err, request):
+        return "first"
+
+    def second_default(err, request):
+        return "second"
+
+    first.add_error_handler(None, first_default)
+    second.add_error_handler(None, second_default)
+
+    assert first.get_current_error_handler(Exception())["handler"] is first_default
+    assert second.get_current_error_handler(Exception())["handler"] is second_default
+
+
 def test_error_handler_can_map_exception_type_to_status():
     itinerary = _make_itinerary("critical-error-type-map")
 
