@@ -165,6 +165,7 @@ class Itinerary:
             instance.prefix = prefix
             instance.nodes_map = []
             instance.static_map = []
+            instance.error_handler_map = []
             instance._routes_by_key = defaultdict(list)
             instance._routes_by_path = defaultdict(list)
             instance._error_handlers_by_code = {}
