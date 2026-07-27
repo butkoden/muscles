@@ -6,15 +6,16 @@ This page defines canonical installation paths for the Muscles ecosystem.
 
 - Public framework name: `Muscles`.
 - Technical package names follow the `muscles-*` ecosystem convention.
-- Current canonical install method: GitHub source installs.
-- Target state: publish stable package releases to PyPI.
+- Current canonical install method: PyPI for release artifacts; GitHub source
+  installs remain available for development checkouts.
+- The current release-candidate core is `muscles==1.0.0rc2`.
 
 ## Install Matrix
 
 ### Core Only
 
 ```bash
-pip install git+https://github.com/butkoden/muscles.git
+pip install "muscles>=1.0.0rc2,<2.0.0"
 ```
 
 Use this when you need shared primitives only: application model, schemas, routing tree, lifecycle and rules metadata.
@@ -22,7 +23,7 @@ Use this when you need shared primitives only: application model, schemas, routi
 ### ASGI Web/API Runtime
 
 ```bash
-pip install git+https://github.com/butkoden/muscles-asgi.git
+pip install muscles-asgi
 ```
 
 Use this when your app runtime is ASGI.
@@ -30,7 +31,7 @@ Use this when your app runtime is ASGI.
 ### WSGI Web/API Runtime
 
 ```bash
-pip install git+https://github.com/butkoden/muscles-wsgi.git
+pip install muscles-wsgi
 ```
 
 Use this when your app runtime is WSGI.
@@ -38,7 +39,7 @@ Use this when your app runtime is WSGI.
 ### CLI Tooling
 
 ```bash
-pip install git+https://github.com/butkoden/muscles-cli.git
+pip install muscles-cli
 ```
 
 Use this for command routing and console strategy support.
@@ -48,7 +49,7 @@ Use this for command routing and console strategy support.
 ```bash
 pip install git+https://github.com/butkoden/muscles-jsonrpc.git
 pip install git+https://github.com/butkoden/muscles-sse.git
-pip install git+https://github.com/butkoden/muscles-mcp.git
+pip install muscles-mcp
 ```
 
 Use these when an application action model must be exposed through JSON-RPC,
@@ -57,10 +58,10 @@ Server-Sent Events or Model Context Protocol.
 ### Framework Extensions
 
 ```bash
-pip install git+https://github.com/butkoden/muscles-sql.git
+pip install muscles-sql
 pip install git+https://github.com/butkoden/muscles-otel.git
 pip install git+https://github.com/butkoden/muscles-documents.git
-pip install git+https://github.com/butkoden/muscles-ai.git
+pip install muscles-ai
 ```
 
 Use these for SQL persistence, observability, document ingestion and read-only

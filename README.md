@@ -117,22 +117,29 @@ Support repositories:
 
 ## Installation
 
-Muscles ecosystem currently uses GitHub source installs as the canonical method.
-PyPI publishing is a target state, not yet the default distribution channel.
+The release-candidate packages are distributed through PyPI. Install the core
+framework with:
+
+```bash
+pip install "muscles>=1.0.0rc2,<2.0.0"
+```
+
+For local development, source checkouts and the full ecosystem matrix, see
+[docs/installation.md](docs/installation.md).
 
 Installation matrix:
 
-- core only: `pip install git+https://github.com/butkoden/muscles.git`
-- ASGI runtime: `pip install git+https://github.com/butkoden/muscles-asgi.git`
-- WSGI runtime: `pip install git+https://github.com/butkoden/muscles-wsgi.git`
-- CLI tooling: `pip install git+https://github.com/butkoden/muscles-cli.git`
+- core only: `pip install "muscles>=1.0.0rc2,<2.0.0"`
+- ASGI runtime: `pip install muscles-asgi`
+- WSGI runtime: `pip install muscles-wsgi`
+- CLI tooling: `pip install muscles-cli`
 - JSON-RPC projection: `pip install git+https://github.com/butkoden/muscles-jsonrpc.git`
 - SSE projection: `pip install git+https://github.com/butkoden/muscles-sse.git`
-- MCP projection: `pip install git+https://github.com/butkoden/muscles-mcp.git`
-- SQL extension: `pip install git+https://github.com/butkoden/muscles-sql.git`
+- MCP projection: `pip install muscles-mcp`
+- SQL extension: `pip install muscles-sql`
 - OTel extension: `pip install git+https://github.com/butkoden/muscles-otel.git`
 - documents extension: `pip install git+https://github.com/butkoden/muscles-documents.git`
-- AI extension: `pip install git+https://github.com/butkoden/muscles-ai.git`
+- AI extension: `pip install muscles-ai`
 - full/dev (source checkouts): clone all repositories and use `PYTHONPATH` with sibling `src` paths.
 
 More detail: [docs/installation.md](docs/installation.md).
