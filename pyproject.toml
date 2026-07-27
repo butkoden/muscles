@@ -12,6 +12,17 @@ authors = ["Denis B. <denis@butko.info>"]
 license = "MIT"
 packages = [{include = "muscles", from = "src"}]
 
+[tool.poetry.urls]
+Homepage = "https://github.com/butkoden/muscles"
+Repository = "https://github.com/butkoden/muscles"
+Documentation = "https://github.com/butkoden/muscles#readme"
+PyPI = "https://pypi.org/project/muscles/"
+Releases = "https://github.com/butkoden/muscles/releases"
+"muscles-data" = "https://pypi.org/project/muscles-data/"
+"muscles-ai" = "https://pypi.org/project/muscles-ai/"
+"muscles-documents" = "https://pypi.org/project/muscles-documents/"
+"muscles-benchmarks" = "https://pypi.org/project/muscles-benchmarks/"
+
 
 [tool.poetry.dependencies]
 python = "^3.9"
