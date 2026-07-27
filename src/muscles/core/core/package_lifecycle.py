@@ -18,6 +18,8 @@ SENSITIVE_KEY_PARTS = (
     "authorization",
     "api_key",
     "private_key",
+    "prompt",
+    "payload",
 )
 
 
