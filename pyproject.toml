@@ -5,7 +5,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "muscles"
-version = "1.0.0rc3"
+version = "1.0.0rc4"
 description = "Muscles framework core"
 readme = "README.md"
 authors = ["Denis B. <denis@butko.info>"]
