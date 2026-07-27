@@ -121,7 +121,7 @@ The release-candidate packages are distributed through PyPI. Install the core
 framework with:
 
 ```bash
-pip install "muscles>=1.0.0rc2,<2.0.0"
+pip install "muscles>=1.0.0rc3,<2.0.0"
 ```
 
 For local development, source checkouts and the full ecosystem matrix, see
@@ -129,7 +129,7 @@ For local development, source checkouts and the full ecosystem matrix, see
 
 Installation matrix:
 
-- core only: `pip install "muscles>=1.0.0rc2,<2.0.0"`
+- core only: `pip install "muscles>=1.0.0rc3,<2.0.0"`
 - ASGI runtime: `pip install muscles-asgi`
 - WSGI runtime: `pip install muscles-wsgi`
 - CLI tooling: `pip install muscles-cli`
