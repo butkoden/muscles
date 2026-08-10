@@ -71,7 +71,9 @@ def to_openapi_schema(value: Any) -> Any:
     data_type = value.get("data_type")
     if data_type is not None or "class" in value:
         result: dict[str, Any] = {"type": _TYPE_MAP.get(data_type, value.get("type", "object"))}
-        data_format = value.get("data_format") or data_type
+        pattern = value.get("pattern")
+        pattern_format = pattern if pattern in _FORMAT_MAP else None
+        data_format = value.get("data_format") or pattern_format or data_type
         if data_format in _FORMAT_MAP:
             result["format"] = _FORMAT_MAP[data_format]
         if value.get("enum") is not None:
@@ -90,7 +92,8 @@ def to_openapi_schema(value: Any) -> Any:
             ("max_length", "maxLength"),
         ):
             if value.get(source) is not None and not (
-                target == "pattern" and result["type"] != "string"
+                target == "pattern"
+                and (result["type"] != "string" or (source == "pattern" and pattern_format))
             ):
                 result[target] = value[source]
         return result

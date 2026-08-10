@@ -9,6 +9,8 @@ from muscles.core.schema import ApiKeyAuthSecurity
 from muscles.core.schema import JsonResponseBody
 from muscles.core.schema import XmlResponseBody
 from muscles.core.schema import TextRequestBody
+from muscles.core.schema import Email
+from muscles.core.schema import to_openapi_schema
 
 
 def test_Swagger():
@@ -218,4 +220,9 @@ def test_Swagger_2():
         }
     }
 
+
+def test_email_field_uses_openapi_format():
+    projected = to_openapi_schema(Email().dump())
+
+    assert projected == {'type': 'string', 'format': 'email'}
 
