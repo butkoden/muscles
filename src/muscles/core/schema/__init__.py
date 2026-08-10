@@ -8,6 +8,7 @@ from .request import *
 from .response import *
 from .parameters import *
 from .swagger import *
+from .openapi import to_openapi_schema
 from .group import *
 from .security import *
 from .itinerary import *
