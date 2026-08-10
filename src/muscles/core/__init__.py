@@ -28,6 +28,7 @@ from .route_contract import (
     normalize_path,
 )
 from .schema import Schema
+from .schema import to_openapi_schema
 from .schema import ResponseBody
 from .schema import JsonResponseBody
 from .schema import XmlResponseBody
