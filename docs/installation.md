@@ -8,14 +8,14 @@ This page defines canonical installation paths for the Muscles ecosystem.
 - Technical package names follow the `muscles-*` ecosystem convention.
 - Canonical install method: PyPI. GitHub source installs are for development
   checkouts.
-- The current release-candidate core is `muscles==1.0.0rc5`.
+- The current stable core is `muscles==1.0.0`.
 
 ## Install Matrix
 
 ### Core Only
 
 ```bash
-pip install "muscles>=1.0.0rc5,<2.0.0"
+pip install "muscles>=1.0.0,<2.0.0"
 ```
 
 Use this when you need shared primitives only: application model, schemas, routing tree, lifecycle and rules metadata.

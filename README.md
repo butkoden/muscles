@@ -1,6 +1,6 @@
-# Muscles Core (Release Candidate)
+# Muscles Core
 
-Muscles is the release-candidate framework core. The core package contains the
+Muscles is the framework core. The core package contains the
 application lifecycle, configuration, shared schema objects, routing tree and
 strategy interface. HTTP, ASGI and CLI packages reuse these primitives instead
 of implementing their own framework model.
@@ -109,11 +109,11 @@ Support repositories:
 
 ## Installation
 
-The release-candidate packages are distributed through PyPI. Install the core
+The framework packages are distributed through PyPI. Install the core
 framework with:
 
 ```bash
-pip install "muscles>=1.0.0rc5,<2.0.0"
+pip install "muscles>=1.0.0,<2.0.0"
 ```
 
 For local development, source checkouts and the full ecosystem matrix, see
@@ -121,7 +121,7 @@ For local development, source checkouts and the full ecosystem matrix, see
 
 Installation matrix:
 
-- core only: `pip install "muscles>=1.0.0rc5,<2.0.0"`
+- core only: `pip install "muscles>=1.0.0,<2.0.0"`
 - ASGI runtime: `pip install muscles-asgi`
 - WSGI runtime: `pip install muscles-wsgi`
 - CLI tooling: `pip install muscles-cli`
