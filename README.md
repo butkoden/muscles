@@ -74,6 +74,30 @@ the app.
 
 More detail: [docs/package-lifecycle.md](docs/package-lifecycle.md).
 
+### Keyed Dependencies
+
+For extension points whose providers are selected by a stable string key, the
+core dependency API supports a fallback and priority-ordered registrations:
+
+```python
+from muscles import Dependency
+
+Dependency.provide("access.user_directory", AccountsUserDirectory)
+
+@Dependency.init("access.user_directory", priority=10)
+class WorkspaceUserDirectory:
+    ...
+
+directory = Dependency.get("access.user_directory")
+```
+
+`Dependency.get()` instantiates the highest-priority provider, falling back to
+the default when no candidate is registered. `Dependency.get_candidates()`
+returns providers in priority order for callers that can try several
+implementations; `Dependency.list()` reports registrations and the selected
+provider. Equal top priorities are reported as ambiguous. Existing type-based
+dependency registration and injection remain available.
+
 ## Repository Map
 
 Core and runtimes:

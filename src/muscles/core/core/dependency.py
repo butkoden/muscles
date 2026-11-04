@@ -1,7 +1,169 @@
 from __future__ import annotations
 import inspect
 import typing
+from dataclasses import dataclass
 from functools import wraps
+from threading import RLock
+
+
+class DependencyError(LookupError):
+    """Base error for keyed dependency resolution."""
+
+
+class DependencyNotFoundError(DependencyError):
+    """No candidate or fallback is registered for a dependency key."""
+
+
+class DependencyProviderNotApplicable(DependencyError):
+    """The selected provider cannot handle the current request context."""
+
+
+class AmbiguousDependencyError(DependencyError):
+    """Multiple candidates share the highest priority."""
+
+
+@dataclass(frozen=True)
+class KeyedDependencyRegistration:
+    key: str
+    provider: typing.Any
+    priority: int | None
+    is_default: bool
+    args: tuple[typing.Any, ...] = ()
+    kwargs: dict[str, typing.Any] | None = None
+
+    @property
+    def provider_name(self) -> str:
+        provider_type = self.provider if inspect.isclass(self.provider) else self.provider.__class__
+        module = getattr(provider_type, "__module__", None)
+        name = getattr(provider_type, "__qualname__", provider_type.__name__)
+        return f"{module}.{name}" if module else name
+
+
+class DependencyRegistry:
+    """Named dependencies with one fallback and priority-ordered providers."""
+
+    def __init__(self):
+        self._defaults: dict[str, KeyedDependencyRegistration] = {}
+        self._providers: dict[str, list[KeyedDependencyRegistration]] = {}
+        self._lock = RLock()
+
+    def provide(self, key: str, provider: typing.Any, *args, **kwargs):
+        key = self._validate_key(key)
+        registration = KeyedDependencyRegistration(key, provider, None, True, args, dict(kwargs))
+        with self._lock:
+            current = self._defaults.get(key)
+            if current is not None and current.provider is not provider:
+                raise ValueError(f"Default provider for dependency `{key}` is already registered")
+            self._defaults[key] = registration
+        return provider
+
+    def register(self, key: str, provider: typing.Any, *, priority: int = 0, args=(), kwargs=None):
+        key = self._validate_key(key)
+        if isinstance(priority, bool) or not isinstance(priority, int):
+            raise TypeError("Dependency priority must be an integer")
+        registration = KeyedDependencyRegistration(
+            key, provider, priority, False, tuple(args), dict(kwargs or {})
+        )
+        with self._lock:
+            providers = self._providers.setdefault(key, [])
+            for current in providers:
+                if current.provider is provider:
+                    if current.priority != priority:
+                        raise ValueError(
+                            f"Provider `{registration.provider_name}` for `{key}` was registered with different priorities"
+                        )
+                    return provider
+            providers.append(registration)
+        return provider
+
+    def resolve(self, key: str):
+        key = self._validate_key(key)
+        with self._lock:
+            providers = tuple(self._providers.get(key, ()))
+            fallback = self._defaults.get(key)
+        if providers:
+            priority = max(provider.priority for provider in providers)
+            winners = [provider for provider in providers if provider.priority == priority]
+            if len(winners) != 1:
+                names = ", ".join(sorted(provider.provider_name for provider in winners))
+                raise AmbiguousDependencyError(
+                    f"Dependency `{key}` has multiple providers at priority {priority}: {names}"
+                )
+            return self._build(winners[0])
+        if fallback is None:
+            raise DependencyNotFoundError(f"Dependency `{key}` is not registered")
+        return self._build(fallback)
+
+    def resolve_candidates(self, key: str) -> list[typing.Any]:
+        key = self._validate_key(key)
+        with self._lock:
+            providers = tuple(self._providers.get(key, ()))
+            fallback = self._defaults.get(key)
+        priorities = [provider.priority for provider in providers]
+        if len(priorities) != len(set(priorities)):
+            raise AmbiguousDependencyError(f"Dependency `{key}` has providers with equal priorities")
+        candidates = sorted(providers, key=lambda provider: provider.priority, reverse=True)
+        if fallback is not None:
+            candidates.append(fallback)
+        if not candidates:
+            raise DependencyNotFoundError(f"Dependency `{key}` is not registered")
+        return [self._build(candidate) for candidate in candidates]
+
+    def list(self, key: str | None = None) -> list[dict[str, typing.Any]]:
+        with self._lock:
+            keys = [self._validate_key(key)] if key is not None else sorted(
+                set(self._defaults) | set(self._providers)
+            )
+            defaults = dict(self._defaults)
+            providers_by_key = {item_key: tuple(value) for item_key, value in self._providers.items()}
+            registrations = [
+                registration
+                for item_key in keys
+                for registration in (
+                    ([defaults[item_key]] if item_key in defaults else [])
+                    + list(providers_by_key.get(item_key, ()))
+                )
+            ]
+        result = []
+        for item_key in keys:
+            candidates = [item for item in registrations if item.key == item_key and not item.is_default]
+            winner = None
+            if candidates:
+                highest = max(item.priority for item in candidates)
+                highest_candidates = [item for item in candidates if item.priority == highest]
+                if len(highest_candidates) == 1:
+                    winner = highest_candidates[0]
+            elif item_key in defaults:
+                winner = defaults[item_key]
+            result.extend(
+                {
+                    "key": item.key,
+                    "provider": item.provider_name,
+                    "priority": item.priority,
+                    "default": item.is_default,
+                    "selected": item is winner,
+                }
+                for item in registrations
+                if item.key == item_key
+            )
+        return result
+
+    @staticmethod
+    def _validate_key(key: str) -> str:
+        if not isinstance(key, str) or not key.strip() or key != key.strip():
+            raise ValueError("Dependency key must be a non-empty string without surrounding whitespace")
+        return key
+
+    @staticmethod
+    def _build(registration: KeyedDependencyRegistration):
+        provider = registration.provider
+        args = registration.args
+        kwargs = registration.kwargs or {}
+        if inspect.isclass(provider) or callable(provider):
+            return provider(*args, **kwargs)
+        if args or kwargs:
+            raise TypeError("Arguments can only be supplied when a dependency provider is callable")
+        return provider
 
 
 class DependencyStorage:
@@ -144,6 +306,27 @@ class Dependency:
     """
 
     _storages = {}
+    _keyed_registry = DependencyRegistry()
+
+    @classmethod
+    def provide(cls, key: str, provider: typing.Any, *args, **kwargs):
+        """Register the fallback provider used when a key has no candidates."""
+        return cls._keyed_registry.provide(key, provider, *args, **kwargs)
+
+    @classmethod
+    def get(cls, key: str):
+        """Resolve the highest-priority provider registered for a string key."""
+        return cls._keyed_registry.resolve(key)
+
+    @classmethod
+    def get_candidates(cls, key: str) -> list[typing.Any]:
+        """Return providers in priority order, followed by the fallback if present."""
+        return cls._keyed_registry.resolve_candidates(key)
+
+    @classmethod
+    def list(cls, key: str | None = None) -> list[dict[str, typing.Any]]:
+        """List keyed registrations and indicate which provider would be selected."""
+        return cls._keyed_registry.list(key)
 
     def __init__(self, dependency, *args, **kwargs) -> None:
         """
@@ -198,6 +381,21 @@ class Dependency:
             ```
 
         """
+
+        if isinstance(interface, str):
+            priority = kwargs.pop("priority", 0)
+
+            def keyed_decorator(provider):
+                Dependency._keyed_registry.register(
+                    interface,
+                    provider,
+                    priority=priority,
+                    args=args,
+                    kwargs=kwargs,
+                )
+                return provider
+
+            return keyed_decorator
 
         def decorator(func):
             ds = DependencyStorage()

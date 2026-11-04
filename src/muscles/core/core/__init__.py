@@ -1,6 +1,16 @@
 from .configure import Configurator
 from .context import BaseStrategy, Context
-from .dependency import DependencyStorage, Dependency, inject
+from .dependency import (
+    AmbiguousDependencyError,
+    Dependency,
+    DependencyError,
+    DependencyNotFoundError,
+    DependencyProviderNotApplicable,
+    DependencyRegistry,
+    DependencyStorage,
+    KeyedDependencyRegistration,
+    inject,
+)
 from .container import DependencyContainer, DependencyScope
 from .backend_pipeline import BackendPipeline, RoutePermissionChecker
 from .heandler import ResponseHandler, BaseResponseHandler
@@ -69,6 +79,12 @@ __all__ = (
     "Context",
     "DependencyStorage",
     "Dependency",
+    "DependencyError",
+    "DependencyNotFoundError",
+    "DependencyProviderNotApplicable",
+    "AmbiguousDependencyError",
+    "DependencyRegistry",
+    "KeyedDependencyRegistration",
     "inject",
     "DependencyContainer",
     "DependencyScope",
