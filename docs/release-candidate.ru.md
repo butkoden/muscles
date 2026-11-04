@@ -1,7 +1,7 @@
 # План выпуска Muscles RC
 
-Линия RC основана на core `1.0.0rc1`; зависимости используют диапазон
-`>=1.0.0rc1,<2.0.0`. Runtime- и extension-пакеты не должны зависеть от Git-
+Линия RC основана на core `1.0.0rc5`; зависимости используют диапазон
+`>=1.0.0rc5,<2.0.0`. Runtime- и extension-пакеты не должны зависеть от Git-
 ветки или локального checkout во время установки.
 
 ## Порядок публикации
@@ -9,9 +9,10 @@
 1. `muscles`
 2. runtime: `muscles-asgi`, `muscles-wsgi`, `muscles-cli`
 3. projections: `muscles-jsonrpc`, `muscles-sse`, `muscles-mcp`
-4. extensions: `muscles-sql`, `muscles-otel`, `muscles-ai`, `muscles-documents`, `muscles-data`
-5. production data adapters
-6. gate `muscles-benchmarks` и итоговый compatibility report
+4. контракты и runtime данных: `muscles-data`
+5. адаптеры данных: `muscles-data-sql`, `muscles-data-sqlalchemy` и адаптеры хранилищ
+6. расширения: `muscles-otel`, `muscles-ai`, `muscles-documents`
+7. gate `muscles-benchmarks` и итоговый compatibility report
 
 ## Gate
 

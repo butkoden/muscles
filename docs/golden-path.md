@@ -40,13 +40,14 @@ shape:
 app/
   application.py       # thin App class + context.execute delegation
   web.py               # route registration entrypoints
-  composition/
-    runtime.py         # runtime factories (wsgi_runtime / asgi_runtime)
 ```
 
-`application.py` should own `Context(runtime.strategy)` and delegate execution.
-`web.py` should mostly import and call `register_*` functions from module folders
-for endpoint and API declarations.
+`application.py` should own `Context(AsgiStrategy)` or the selected runtime
+strategy and delegate execution to `context.execute()`. `web.py` should mostly
+import and call `register_*` functions from module folders for endpoint and API
+declarations. Use the strategy and route APIs provided by `muscles-asgi` or
+`muscles-wsgi`; core does not define `wsgi_runtime()` or `asgi_runtime()`
+factories.
 
 ## Layer Rules
 

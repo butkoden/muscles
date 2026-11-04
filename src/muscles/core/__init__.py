@@ -1,7 +1,7 @@
 from .core import Configurator
 from .core import BaseStrategy, Context
 from .core import DependencyStorage, Dependency, inject
-from .core import DependencyContainer, DependencyScope, BackendPipeline
+from .core import DependencyContainer, DependencyScope, BackendPipeline, RoutePermissionChecker
 from .core import ResponseHandler, BaseResponseHandler
 from .core import Self
 from .core import storageMapper, Storage, StorageStrategy, StorageMapper
@@ -17,6 +17,9 @@ from .core import ActionContext, ActionContract, ActionDispatcher, ActionResult,
 from .core import ActionError, ActionExecutionError, ActionNotFound, ActionPermissionDenied, ActionValidationError
 from .core import StreamEvent, StreamResult, coerce_stream_event, stream_events
 from .core import action, dispatch_action, register_action
+from .core import get_package, set_package, reset_package
+from .core import get_application, set_application, reset_application
+from .core import application
 from .response import BaseResponse, BytesResponse, FileResponse, JsonResponse, HtmlResponse, NoContentResponse, normalize_response
 from .errors import normalize_problem_payload
 from .cors import CorsMiddleware, cors
@@ -107,6 +110,7 @@ from .utils import WatchdogHandlerInterface
 from .core import StorageInterface
 from .core import EventsStorageInterface
 from .core import EventsStorage
+from .core import ModuleLoader
 from .exceptions import ApplicationException
 from .exceptions import AccessDeniedException
 from .exceptions import RequestErrorException
@@ -183,6 +187,7 @@ __all__ = (
     "DependencyContainer",
     "DependencyScope",
     "BackendPipeline",
+    "RoutePermissionChecker",
     "BaseResponseHandler",
     "ResponseHandler",
     "Self",
@@ -288,4 +293,12 @@ __all__ = (
     "SystemUser",
     "GuestUser",
     "User",
+    "get_package",
+    "set_package",
+    "reset_package",
+    "ModuleLoader",
+    "get_application",
+    "set_application",
+    "reset_application",
+    "application"
 )

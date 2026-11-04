@@ -226,3 +226,42 @@ def test_email_field_uses_openapi_format():
 
     assert projected == {'type': 'string', 'format': 'email'}
 
+
+def test_single_property_model_keeps_its_property_shape():
+    projected = to_openapi_schema({
+        'type': 'object',
+        'properties': {
+            'token': {
+                'data_type': 'string',
+                'max_length': 256,
+                'required': True,
+                'nullable': False,
+                'description': 'Confirmation token',
+            },
+        },
+    })
+
+    assert projected == {
+        'type': 'object',
+        'properties': {
+            'token': {
+                'type': 'string',
+                'maxLength': 256,
+                'nullable': False,
+                'description': 'Confirmation token',
+            },
+        },
+        'required': ['token'],
+    }
+
+
+def test_standalone_column_schema_remains_an_object():
+    assert to_openapi_schema({
+        'name': {'class': 'String', 'data_type': 'string'},
+    }) == {
+        'type': 'object',
+        'properties': {
+            'name': {'type': 'string'},
+        },
+    }
+

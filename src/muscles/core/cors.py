@@ -41,6 +41,12 @@ class CorsMiddleware:
         return headers
 
     def apply(self, response, request):
+        append_header = getattr(response, "header_append", None)
+        if callable(append_header):
+            for key, value in self._headers(request).items():
+                append_header((key, value))
+            return response
+
         response = normalize_response(response, request=request)
         response.headers.update(self._headers(request))
         return response

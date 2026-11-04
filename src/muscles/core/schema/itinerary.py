@@ -296,7 +296,14 @@ class Itinerary:
         :return:
         """
         if url == '/':
-            url = '/main'
+            route = self.node
+
+            if route.route_records:
+                self._match_cache[url] = route
+                return route
+
+            self._match_cache[url] = False
+            return None
         cached = self._match_cache.get(url)
         if cached is not None:
             return cached or None
@@ -450,9 +457,6 @@ class Itinerary:
         :param module: Настройки модуля обработки
         :return:
         """
-
-        if route == '/':
-            route = '/main'
         if module is not None and 'url_prefix' in module:
             route = '/'.join(module['url_prefix'].split('/') + route.split('/'))
         full_route = route
@@ -469,12 +473,17 @@ class Itinerary:
             raise Exception('The `handler` parameter is mandatory')
 
         chunks = route.split('/')
+        if route in ('', '/'):
+            chunks = []
+
         self._match_cache.clear()
         node = self.node
         canonical_route = canonical_route if canonical_route is not None else route
         created_route_record: typing.Optional[RouteRecord] = None
         if key is None or not key:
-            key = '.'.join(tuple(chunks[1:] if chunks[0] == '' else chunks))
+            key = '.'.join(
+                tuple(chunks[1:] if chunks and chunks[0] == '' else chunks)
+            ) or 'root'
         _key, key = key, None
         _handler, handler = handler, None
         _chunks = []
@@ -510,6 +519,7 @@ class Itinerary:
                         'content_type_lower': (content_type or '').lower() if content_type else '',
                         'redirect': redirect,
                         'handler': handler,
+                        'permission': getattr(handler, 'permission', None),
                         'instance': self,
                     }
                     self.nodes_map.append(route_record)
@@ -517,6 +527,42 @@ class Itinerary:
                     self._routes_by_path[_route_path_key(route)].append(route_record)
                     created_route_record = route_record
             node = node.instance(normalized_chunk, full_route=full_route, key=key, dictionary_key=dictionary_key, rule=rule)
+
+        if not chunks:
+            key = _key
+            handler = _handler
+
+            exists = any(
+                nm['route'] == '/'
+                and nm['method'] == method
+                and nm['content_type'] == content_type
+                for nm in self._routes_by_key.get(key, [])
+            )
+
+            if len(self._routes_by_key.get(key, [])) == 0 or not exists:
+                route_record = {
+                    "key": key,
+                    "route": "/",
+                    "canonical_route": canonical_route,
+                    "aliases": aliases or [],
+                    "method": method,
+                    "content_type": content_type,
+                    "method_upper": (method or '*').upper() if method else '*',
+                    "content_type_lower": (content_type or '').lower() if content_type else '',
+                    "redirect": redirect,
+                    "handler": handler,
+                    "permission": getattr(handler, "permission", None),
+                    "instance": self,
+                }
+
+                self.nodes_map.append(route_record)
+                self._routes_by_key[key].append(route_record)
+                self._routes_by_path[_route_path_key('/')].append(route_record)
+                created_route_record = route_record
+
+            node = self.node
+
+
         if handler is None:
             raise Exception('The route handler was not attached')
         route_handler = typing.cast(typing.Any, handler)
@@ -789,6 +835,8 @@ class Itinerary:
             return {"code": status, "handler": handler}
 
         status = status or getattr(error, "status", None)
+        if status is not None:
+            status = int(status)
         handler = self._error_handlers_by_code.get(status)
         if handler:
             return {"code": status, "handler": handler}

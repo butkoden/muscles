@@ -2,7 +2,7 @@ from .configure import Configurator
 from .context import BaseStrategy, Context
 from .dependency import DependencyStorage, Dependency, inject
 from .container import DependencyContainer, DependencyScope
-from .backend_pipeline import BackendPipeline
+from .backend_pipeline import BackendPipeline, RoutePermissionChecker
 from .heandler import ResponseHandler, BaseResponseHandler
 from .self import Self
 from .storage import storageMapper, Storage, StorageStrategy, StorageMapper
@@ -17,6 +17,14 @@ from .runtime_mode import is_production
 from .inspection import inspect_application
 from .generator import GenerationRequest, GeneratorProvider, GeneratorRegistry
 from .registry import ApplicationRegistry, get_application_registry
+from .package_context import get_package, set_package, reset_package
+from .application_proxy import application
+from .application_context import (
+    get_application,
+    set_application,
+    reset_application,
+)
+from .module_loader import ModuleLoader
 from .package_lifecycle import (
     MusclesPackage,
     NoopTelemetry,
@@ -65,6 +73,7 @@ __all__ = (
     "DependencyContainer",
     "DependencyScope",
     "BackendPipeline",
+    "RoutePermissionChecker",
     "BaseResponseHandler",
     "ResponseHandler",
     "Self",
@@ -116,4 +125,12 @@ __all__ = (
     "resolve_package_config",
     "resolve_telemetry",
     "sanitize_payload",
+    "get_package",
+    "set_package",
+    "reset_package",
+    "ModuleLoader",
+    "get_application",
+    "set_application",
+    "reset_application",
+    "application",
 )

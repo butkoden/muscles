@@ -25,8 +25,8 @@ Public symbols exported by `muscles` / `muscles.core` are documented in
 
 Runtime packages such as `muscles-asgi`, `muscles-wsgi` and `muscles-cli`
 project these core contracts into concrete protocols.
-Extension packages such as `muscles-ai`, `muscles-documents`, `muscles-sql`
-and `muscles-otel` add reusable framework capabilities without changing the
+Extension packages such as `muscles-ai`, `muscles-documents`, `muscles-data`,
+`muscles-data-sql` and `muscles-otel` add reusable framework capabilities without changing the
 core application model.
 
 ## Ecosystem Repository Reference
@@ -62,9 +62,7 @@ actions as MCP tools.
 
 ### Data, Observability And Integration Extensions
 
-[`muscles-sql`](https://github.com/butkoden/muscles-sql) is the SQL persistence
-extension. Use it for database integration and persistence patterns that should
-stay outside protocol runtimes.
+[`muscles-data`](https://github.com/butkoden/muscles-data) defines typed data ports, resource configuration/runtime and the shared migration registry. [`muscles-data-sql`](https://github.com/butkoden/muscles-data-sql) provides native SQL connections and migration backends; the source repository is `muscles-data-sql`. SQLAlchemy and provider-specific backends are separate adapters.
 
 [`muscles-otel`](https://github.com/butkoden/muscles-otel) is the observability
 extension. Use it for OpenTelemetry-style instrumentation, traces and metrics
@@ -100,26 +98,24 @@ Detailed ownership map: [repositories.md](repositories.md).
 
 ## Installation
 
-Current canonical installation uses GitHub source installs:
+Install published releases from PyPI. Use GitHub source installs only for local development:
 
 ```bash
-pip install git+https://github.com/butkoden/muscles.git
+pip install "muscles>=1.0.0rc5,<2.0.0"
 ```
 
 Use runtime packages when you need a web/API transport:
 
 ```bash
-pip install git+https://github.com/butkoden/muscles-asgi.git
-pip install git+https://github.com/butkoden/muscles-wsgi.git
+pip install muscles-asgi muscles-wsgi
 ```
 
 Use extension packages when you need reusable framework capabilities:
 
 ```bash
-pip install git+https://github.com/butkoden/muscles-documents.git
-pip install git+https://github.com/butkoden/muscles-ai.git
-pip install git+https://github.com/butkoden/muscles-sql.git
-pip install git+https://github.com/butkoden/muscles-otel.git
+pip install muscles-documents muscles-ai muscles-otel
+# Native SQL distribution
+pip install muscles-data-sql
 ```
 
 More detail: [installation.md](installation.md).
@@ -425,7 +421,7 @@ PYTHONPATH=src python3 -m pytest
 When testing ecosystem packages from sibling checkouts:
 
 ```bash
-PYTHONPATH=../muscles/src:../muscles-asgi/src:../muscles-wsgi/src:../muscles-cli/src:../muscles-jsonrpc/src:../muscles-sse/src:../muscles-mcp/src:../muscles-sql/src:../muscles-otel/src:../muscles-documents/src:../muscles-ai/src:src python3 -m pytest
+PYTHONPATH=../muscles/src:../muscles-asgi/src:../muscles-wsgi/src:../muscles-cli/src:../muscles-jsonrpc/src:../muscles-sse/src:../muscles-mcp/src:../muscles-data/src:../muscles-data-sql/src:../muscles-data-sqlalchemy/src:../muscles-otel/src:../muscles-documents/src:../muscles-ai/src:src python3 -m pytest
 ```
 
 ## Deep References
@@ -439,7 +435,7 @@ PYTHONPATH=../muscles/src:../muscles-asgi/src:../muscles-wsgi/src:../muscles-cli
   - [`muscles-jsonrpc`](https://github.com/butkoden/muscles-jsonrpc)
   - [`muscles-sse`](https://github.com/butkoden/muscles-sse)
   - [`muscles-mcp`](https://github.com/butkoden/muscles-mcp)
-  - [`muscles-sql`](https://github.com/butkoden/muscles-sql)
+  - [`muscles-data-sql`](https://github.com/butkoden/muscles-data-sql)
   - [`muscles-otel`](https://github.com/butkoden/muscles-otel)
   - [`muscles-documents`](https://github.com/butkoden/muscles-documents)
   - [`muscles-ai`](https://github.com/butkoden/muscles-ai)

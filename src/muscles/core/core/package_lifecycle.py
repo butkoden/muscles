@@ -1,6 +1,10 @@
 from __future__ import annotations
 
+
+import importlib
+import pkgutil
 import inspect
+
 from contextlib import nullcontext
 from dataclasses import dataclass, field
 from typing import Any, Mapping
@@ -8,6 +12,8 @@ from typing import Any, Mapping
 from .actions import ActionContract, register_action
 from .container import DependencyContainer
 from .registry import get_application_registry
+from .package_context import set_package, reset_package
+from .module_loader import ModuleLoader
 
 
 SENSITIVE_KEY_PARTS = (
@@ -43,10 +49,43 @@ class PackageService:
     kwargs: dict[str, Any] = field(default_factory=dict)
 
 
-class MusclesPackage:
+class MusclesPackage(ModuleLoader):
     """Base contract for framework packages installed through Muscles core."""
 
     namespace: str = ""
+
+    modules = ()
+
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
+
+        original_init = cls.__init__
+
+        def init(self, *args, **kwargs):
+            original_init(self, *args, **kwargs)
+            self.load()
+
+        cls.__init__ = init
+
+    def load(self):
+        token = set_package(self)
+
+        try:
+            for module_name in self.modules:
+                self._load_module(module_name)
+        finally:
+            reset_package(token)
+
+    def _load_module(self, module_name):
+        module = importlib.import_module(module_name)
+
+        if not hasattr(module, "__path__"):
+            return
+
+        for module_info in pkgutil.iter_modules(module.__path__):
+            self._load_module(
+                f"{module_name}.{module_info.name}"
+            )
 
     def build_runtime(self, *args: Any, **kwargs: Any) -> Any:
         return None
@@ -55,6 +94,12 @@ class MusclesPackage:
         return []
 
     def actions(self, *args: Any, **kwargs: Any) -> Any:
+        return []
+
+    def permissions(self, *args: Any, **kwargs: Any) -> Any:
+        return []
+
+    def permission_policies(self, *args: Any, **kwargs: Any) -> Any:
         return []
 
     def inspection_provider(self, *args: Any, **kwargs: Any) -> Any:
@@ -113,6 +158,28 @@ def install_package(app, config: Any, package: Any):
                 values={"app": app, "runtime": runtime, "config": package_config},
             )
             register_actions(app, actions)
+
+        permissions = list(call_optional_package_hook(
+            package,
+            "permissions",
+            default=[],
+            ordered_names=("app", "runtime", "config"),
+            values={"app": app, "runtime": runtime, "config": package_config},
+        ) or [])
+        if permissions:
+            with telemetry.span("muscles.package.permissions.register", **attributes):
+                for permission in permissions:
+                    registry.add_permission(permission)
+
+        extensions = call_optional_package_hook(
+            package,
+            "permission_policies",
+            default=[],
+            ordered_names=("app", "runtime", "config"),
+            values={"app": app, "runtime": runtime, "config": package_config},
+        )
+        for extension in extensions or []:
+            registry.add_permission_policy(extension)
 
         with telemetry.span("muscles.package.inspect.register", **attributes):
             provider = call_optional_package_hook(

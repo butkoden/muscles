@@ -6,6 +6,14 @@ from typing import Any, Callable
 
 from ..exceptions import ApplicationException
 from .dependency import Dependency
+from .application_context import get_application
+
+
+class RoutePermissionChecker:
+    """Application service consulted for routes declaring a permission."""
+
+    def check_route(self, request, permission) -> bool:
+        raise NotImplementedError
 
 
 class BackendPipeline:
@@ -174,6 +182,23 @@ class BackendPipeline:
 
     def call_handler(self, request, route_params, controller_factory=None):
         handler = request.route["handler"]
+        permission = request.route.get("permission", getattr(handler, "permission", None))
+        check_mode = getattr(handler, "permission_check", "route")
+        if permission is not None and check_mode not in ("route", "business"):
+            raise ApplicationException(status=500, reason="Invalid permission check mode")
+        if permission is not None and check_mode == "route":
+            app = get_application()
+            checker = None
+            for container in (getattr(request, "container", None), getattr(app, "container", None), self.container):
+                if container is None or not hasattr(container, "resolve"):
+                    continue
+                try:
+                    checker = container.resolve(RoutePermissionChecker)
+                    break
+                except KeyError:
+                    continue
+            if checker is None or checker.check_route(request, permission) is not True:
+                raise ApplicationException(status=403, reason="Permission denied")
         kwargs = self.build_handler_kwargs(handler, request, route_params)
         if hasattr(handler, "controller"):
             controller = controller_factory(handler) if controller_factory else handler.controller()

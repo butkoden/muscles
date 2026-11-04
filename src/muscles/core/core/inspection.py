@@ -91,8 +91,7 @@ def _collect_routes(app) -> list[dict[str, Any]]:
         route_full = getattr(node, "full_route", None)
         canonical_route = getattr(handler, "canonical_route", None) or route_full or route_key
         aliases = sorted(set(getattr(handler, "aliases", []) or []))
-        routes.append(
-            {
+        route = {
                 "name": getattr(node, "key", None) or getattr(handler, "__name__", "unknown"),
                 "path": route_full or route_key,
                 "method": getattr(handler, "method", None),
@@ -100,7 +99,11 @@ def _collect_routes(app) -> list[dict[str, Any]]:
                 "canonical": canonical_route,
                 "aliases": aliases,
             }
-        )
+        permission = getattr(handler, "permission", None)
+        if permission is not None:
+            route["permission"] = permission if isinstance(permission, str) else getattr(permission, "id", None)
+            route["permission_check"] = getattr(handler, "permission_check", "route")
+        routes.append(route)
     return routes
 
 

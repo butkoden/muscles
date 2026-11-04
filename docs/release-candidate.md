@@ -1,7 +1,7 @@
 # Muscles RC release plan
 
-The RC line is based on core `1.0.0rc1` and uses versioned dependencies in the
-range `>=1.0.0rc1,<2.0.0`. Runtime and extension packages must not depend on a
+The RC line is based on core `1.0.0rc5` and uses versioned dependencies in the
+range `>=1.0.0rc5,<2.0.0`. Runtime and extension packages must not depend on a
 Git branch or a local checkout at install time.
 
 ## Publication order
@@ -9,9 +9,10 @@ Git branch or a local checkout at install time.
 1. `muscles`
 2. runtimes: `muscles-asgi`, `muscles-wsgi`, `muscles-cli`
 3. projections: `muscles-jsonrpc`, `muscles-sse`, `muscles-mcp`
-4. extensions: `muscles-sql`, `muscles-otel`, `muscles-ai`, `muscles-documents`, `muscles-data`
-5. production data adapters
-6. `muscles-benchmarks` gate and final compatibility report
+4. data contracts/runtime: `muscles-data`
+5. data adapters: `muscles-data-sql`, `muscles-data-sqlalchemy`, provider adapters
+6. extensions: `muscles-otel`, `muscles-ai`, `muscles-documents`
+7. `muscles-benchmarks` gate and final compatibility report
 
 ## Gate
 

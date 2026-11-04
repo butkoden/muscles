@@ -25,7 +25,7 @@
 
 Пакеты `muscles-asgi`, `muscles-wsgi` и `muscles-cli` проецируют эти контракты
 ядра в конкретные протоколы.
-Пакеты `muscles-ai`, `muscles-documents`, `muscles-sql` и `muscles-otel`
+Пакеты `muscles-ai`, `muscles-documents`, `muscles-data`, `muscles-data-sql` и `muscles-otel`
 добавляют переиспользуемые возможности фреймворка, не меняя общую модель
 приложения.
 
@@ -64,9 +64,7 @@ golden path.
 
 ### Данные, наблюдаемость и интеграции
 
-[`muscles-sql`](https://github.com/butkoden/muscles-sql) - SQL-расширение для
-хранения данных. Используйте его для интеграции с базами данных и паттернов
-хранения, которые не должны жить внутри протокольных рантаймов.
+[`muscles-data`](https://github.com/butkoden/muscles-data) содержит типизированные порты данных, конфигурацию/runtime ресурсов и общий реестр миграций. [`muscles-data-sql`](https://github.com/butkoden/muscles-data-sql) предоставляет нативные SQL-подключения и backend миграций; репозиторий находится в `muscles-data-sql`. SQLAlchemy и адаптеры конкретных хранилищ вынесены в отдельные пакеты.
 
 [`muscles-otel`](https://github.com/butkoden/muscles-otel) - расширение для
 наблюдаемости. Используйте его для OpenTelemetry-инструментации, трассировок и
@@ -103,26 +101,24 @@ ASGI-пакет для совместимости и исторических п
 
 ## Установка
 
-Текущий канонический способ установки - установка из GitHub-репозитория:
+Опубликованные версии устанавливаются из PyPI. Установка из GitHub нужна для локальной разработки:
 
 ```bash
-pip install git+https://github.com/butkoden/muscles.git
+pip install "muscles>=1.0.0rc5,<2.0.0"
 ```
 
 Для web/API-приложений используйте отдельные рантайм-пакеты:
 
 ```bash
-pip install git+https://github.com/butkoden/muscles-asgi.git
-pip install git+https://github.com/butkoden/muscles-wsgi.git
+pip install muscles-asgi muscles-wsgi
 ```
 
 Для переиспользуемых возможностей фреймворка подключайте extension-пакеты:
 
 ```bash
-pip install git+https://github.com/butkoden/muscles-documents.git
-pip install git+https://github.com/butkoden/muscles-ai.git
-pip install git+https://github.com/butkoden/muscles-sql.git
-pip install git+https://github.com/butkoden/muscles-otel.git
+pip install muscles-documents muscles-ai muscles-otel
+# Дистрибутив нативного SQL
+pip install muscles-data-sql
 ```
 
 Подробнее: [installation.md](installation.md).
@@ -374,7 +370,7 @@ PYTHONPATH=src python3 -m pytest
 Для пакетов экосистемы из соседних локальных копий:
 
 ```bash
-PYTHONPATH=../muscles/src:../muscles-asgi/src:../muscles-wsgi/src:../muscles-cli/src:../muscles-jsonrpc/src:../muscles-sse/src:../muscles-mcp/src:../muscles-sql/src:../muscles-otel/src:../muscles-documents/src:../muscles-ai/src:src python3 -m pytest
+PYTHONPATH=../muscles/src:../muscles-asgi/src:../muscles-wsgi/src:../muscles-cli/src:../muscles-jsonrpc/src:../muscles-sse/src:../muscles-mcp/src:../muscles-data/src:../muscles-data-sql/src:../muscles-data-sqlalchemy/src:../muscles-otel/src:../muscles-documents/src:../muscles-ai/src:src python3 -m pytest
 ```
 
 ## Глубокие справочники
@@ -388,7 +384,7 @@ PYTHONPATH=../muscles/src:../muscles-asgi/src:../muscles-wsgi/src:../muscles-cli
   - [`muscles-jsonrpc`](https://github.com/butkoden/muscles-jsonrpc)
   - [`muscles-sse`](https://github.com/butkoden/muscles-sse)
   - [`muscles-mcp`](https://github.com/butkoden/muscles-mcp)
-  - [`muscles-sql`](https://github.com/butkoden/muscles-sql)
+  - [`muscles-data-sql`](https://github.com/butkoden/muscles-data-sql)
   - [`muscles-otel`](https://github.com/butkoden/muscles-otel)
   - [`muscles-documents`](https://github.com/butkoden/muscles-documents)
   - [`muscles-ai`](https://github.com/butkoden/muscles-ai)

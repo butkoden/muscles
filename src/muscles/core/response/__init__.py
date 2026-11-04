@@ -3,7 +3,7 @@ from .bytes import BytesResponse
 from .file import FileResponse
 from .json import JsonResponse
 from .html import HtmlResponse
-from .no_content import NoContentResponse
+from muscles.core.response.no_content import NoContentResponse
 from .normalize import normalize_response
 
 __all__ = (

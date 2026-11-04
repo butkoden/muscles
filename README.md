@@ -5,43 +5,29 @@ application lifecycle, configuration, shared schema objects, routing tree and
 strategy interface. HTTP, ASGI and CLI packages reuse these primitives instead
 of implementing their own framework model.
 
-## Recommended Application Shape (Canonical Path)
+## Application Shape
 
-Most projects use this lifecycle:
-
-1. `App` class receives a runtime object (`runtime.strategy`, `runtime.routes`, `runtime.rest_api`).
-2. `Context` is created with `runtime.strategy`.
-3. REST API object is created through `runtime.rest_api(...)`.
-4. Endpoints are registered with `runtime.routes.init(...)` or `api.init(...)`.
-5. Execution goes through `Context.execute(...)`.
+`muscles-cli`, `muscles-asgi` and `muscles-wsgi` use the same core application
+model. The selected runtime supplies a strategy; `Context` dispatches through
+it:
 
 ```python
 from muscles import ApplicationMeta, Configurator, Context
-from muscles.wsgi import wsgi_app
+from muscles.asgi import AsgiStrategy
+
 
 class App(metaclass=ApplicationMeta):
-    package_paths = []
-    shutup = False
-    config = Configurator(obj={})
+    config = Configurator(obj={"main": {"HOST": "0.0.0.0", "PORT": "8080"}})
+    context = Context(AsgiStrategy, params={})
 
-    def __init__(self, runtime):
-        self.runtime = runtime
-        self.context = Context(runtime.strategy, params={})
-        self.api = runtime.rest_api(prefix="/api/v1")
-        register_pages(runtime.routes)
-        register_api(self.api, runtime.routes)
-
-    def __call__(self, environ, start_response):
-        self.context.set_param("environ", environ)
-        self.context.set_param("start_response", start_response)
-        return self.context.execute()
-
-
-wsgi_app(App(wsgi_runtime()))
+    def run(self, *args):
+        return self.context.execute(*args, shutup=True)
 ```
 
-This style keeps runtime-specific glue thin and leaves endpoint modules with the
-behavior and OpenAPI metadata.
+For WSGI or CLI, use the corresponding strategy from `muscles.wsgi` or
+`muscles.cli`. The runtime-specific package owns route declaration and server
+startup; core does not require an extra `wsgi_runtime()` or `runtime.rest_api()`
+factory. See [docs/golden-path.md](docs/golden-path.md).
 
 ## Packages
 
@@ -52,7 +38,9 @@ behavior and OpenAPI metadata.
 - `muscles-jsonrpc` - JSON-RPC projection for core actions.
 - `muscles-sse` - Server-Sent Events projection for streaming actions.
 - `muscles-mcp` - Model Context Protocol projection for AI tools.
-- `muscles-sql` - SQL persistence helpers, named connections and diagnostics.
+- `muscles-data` - typed data ports, resource runtime and migration registry.
+- `muscles-data-sql` - native SQL connections, repositories and SQL migrations.
+- `muscles-data-sqlalchemy` - SQLAlchemy adapter for `muscles-data` resources.
 - `muscles-otel` - optional lifecycle telemetry hooks and tracer provider.
 - `muscles-documents` - document loading, parsing, chunking and sync actions.
 - `muscles-ai` - read-only AI/RAG actions and runtime contracts.
@@ -63,13 +51,13 @@ behavior and OpenAPI metadata.
 
 `muscles` is the core contract. Runtime packages such as `muscles-asgi`,
 `muscles-wsgi` and `muscles-cli` project the same app model into a concrete
-transport. Extension packages such as `muscles-otel`, `muscles-sql`,
-`muscles-documents` and `muscles-ai` add services, actions and diagnostics
+transport. Extension packages such as `muscles-otel`, `muscles-data`,
+`muscles-data-sql`, `muscles-documents` and `muscles-ai` add services, actions and diagnostics
 through the package lifecycle:
 
 ```python
 from muscles import install_package, inspect_application, doctor_application
-from muscles_otel import OtelPackage
+from muscles.otel import OtelPackage
 
 app = App()
 tracer = install_package(app, {"enabled": True}, OtelPackage())
@@ -103,7 +91,11 @@ Protocol projections:
 
 Framework extensions:
 
-- [`muscles-sql`](https://github.com/butkoden/muscles-sql) - SQL layer for models, repositories, transactions and named SQL connections.
+- [`muscles-data`](https://github.com/butkoden/muscles-data) - typed ports, resource runtime, policies and migration registry.
+- [`muscles-data-sql`](https://github.com/butkoden/muscles-data-sql) - native SQL connections and migrations; the repository is `muscles-data-sql`.
+- [`muscles-data-sqlalchemy`](https://github.com/butkoden/muscles-data-sqlalchemy) - SQLAlchemy-backed `muscles-data` resource adapter.
+- [`muscles-migrations`](https://github.com/butkoden/muscles-migrations) - migration compatibility imports.
+- [`muscles-permissions`](https://github.com/butkoden/muscles-permissions) - permission catalog and policy contracts.
 - [`muscles-otel`](https://github.com/butkoden/muscles-otel) - optional lifecycle telemetry hooks for package, strategy and action execution.
 - [`muscles-documents`](https://github.com/butkoden/muscles-documents) - document source ingestion, parsing, chunking and sync planning.
 - [`muscles-ai`](https://github.com/butkoden/muscles-ai) - AI/RAG actions that can use document and data integrations.
@@ -121,7 +113,7 @@ The release-candidate packages are distributed through PyPI. Install the core
 framework with:
 
 ```bash
-pip install "muscles>=1.0.0rc3,<2.0.0"
+pip install "muscles>=1.0.0rc5,<2.0.0"
 ```
 
 For local development, source checkouts and the full ecosystem matrix, see
@@ -129,16 +121,18 @@ For local development, source checkouts and the full ecosystem matrix, see
 
 Installation matrix:
 
-- core only: `pip install "muscles>=1.0.0rc3,<2.0.0"`
+- core only: `pip install "muscles>=1.0.0rc5,<2.0.0"`
 - ASGI runtime: `pip install muscles-asgi`
 - WSGI runtime: `pip install muscles-wsgi`
 - CLI tooling: `pip install muscles-cli`
-- JSON-RPC projection: `pip install git+https://github.com/butkoden/muscles-jsonrpc.git`
-- SSE projection: `pip install git+https://github.com/butkoden/muscles-sse.git`
+- JSON-RPC projection: install `muscles-jsonrpc` from PyPI
+- SSE projection: install `muscles-sse` from PyPI
 - MCP projection: `pip install muscles-mcp`
-- SQL extension: `pip install muscles-sql`
-- OTel extension: `pip install git+https://github.com/butkoden/muscles-otel.git`
-- documents extension: `pip install git+https://github.com/butkoden/muscles-documents.git`
+- Data contracts: `pip install muscles-data`
+- Native SQL: `pip install muscles-data-sql`
+- SQLAlchemy resource adapter: `pip install muscles-data-sqlalchemy`
+- OTel extension: `pip install muscles-otel`
+- documents extension: `pip install muscles-documents`
 - AI extension: `pip install muscles-ai`
 - full/dev (source checkouts): clone all repositories and use `PYTHONPATH` with sibling `src` paths.
 
@@ -188,7 +182,8 @@ tools can coexist in a portfolio; Muscles should not claim production maturity
 or performance superiority without benchmark evidence.
 
 More detail: [docs/positioning.md](docs/positioning.md).
-Golden tutorial reference (planned): [Issue #16](https://github.com/butkoden/muscles/issues/16).
+The current project structure and conventions are documented in
+[docs/golden-path.md](docs/golden-path.md).
 
 ## Golden Path Structure
 
@@ -389,5 +384,5 @@ PYTHONPATH=src python -m pytest -q
 When testing an integration app that uses all packages from sibling checkouts:
 
 ```bash
-PYTHONPATH=../muscles/src:../muscles-wsgi/src:../muscles-asgi/src:../muscles-cli/src:../muscles-jsonrpc/src:../muscles-sse/src:../muscles-mcp/src:../muscles-sql/src:../muscles-otel/src:../muscles-documents/src:../muscles-ai/src python -m pytest -q
+PYTHONPATH=../muscles/src:../muscles-wsgi/src:../muscles-asgi/src:../muscles-cli/src:../muscles-jsonrpc/src:../muscles-sse/src:../muscles-mcp/src:../muscles-data/src:../muscles-data-sql/src:../muscles-data-sqlalchemy/src:../muscles-otel/src:../muscles-documents/src:../muscles-ai/src python -m pytest -q
 ```

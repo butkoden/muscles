@@ -5,7 +5,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "muscles"
-version = "1.0.0rc5"
+version = "1.0.0"
 description = "Muscles framework core"
 readme = "README.md"
 authors = ["Denis B. <denis@butko.info>"]
@@ -29,7 +29,6 @@ python = ">=3.10,<4.0"
 watchdog = "^4.0.0"
 dnspython = "==2.6.1"
 pyyaml = "~=6.0.0"
-setuptools = "==69.0.2"
 jsonschema = ">=4.18,<5"
 
 

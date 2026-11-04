@@ -96,6 +96,27 @@ def to_openapi_schema(value: Any) -> Any:
                 and (result["type"] != "string" or (source == "pattern" and pattern_format))
             ):
                 result[target] = value[source]
+        for key in ("description", "title", "example", "default", "nullable", "readOnly", "writeOnly", "deprecated"):
+            if value.get(key) is not None:
+                result[key] = value[key]
+        return result
+
+    if value.get("type") == "object" and isinstance(value.get("properties"), dict):
+        properties = value["properties"]
+        result = {
+            key: (
+                {name: to_openapi_schema(schema) for name, schema in item.items()}
+                if key == "properties" else to_openapi_schema(item)
+            )
+            for key, item in value.items()
+            if key != "required" and item is not None
+        }
+        required = [
+            name for name, schema in properties.items()
+            if isinstance(schema, dict) and schema.get("required") is True
+        ]
+        if required:
+            result["required"] = required
         return result
 
     return {

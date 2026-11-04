@@ -30,7 +30,14 @@ should live.
 
 | Repository | Responsibility |
 | --- | --- |
-| [`muscles-sql`](https://github.com/butkoden/muscles-sql) | SQL models, repositories, transactions, migrations helpers and named SQL connections. |
+| [`muscles-data`](https://github.com/butkoden/muscles-data) | Typed data ports, resource configuration/runtime, policies and migration registry. |
+| [`muscles-data-sql`](https://github.com/butkoden/muscles-data-sql) | Native SQL connections and SQL migration backends. The repository is `muscles-data-sql`. |
+| [`muscles-data-sqlalchemy`](https://github.com/butkoden/muscles-data-sqlalchemy) | SQLAlchemy resource adapter for `muscles-data`. |
+| [`muscles-migrations`](https://github.com/butkoden/muscles-migrations) | Compatibility imports for migration registries and sources. |
+| [`muscles-permissions`](https://github.com/butkoden/muscles-permissions) | Permission catalog, role and policy contracts. |
+| `muscles-data-*` adapters | Provider-specific Redis, search, vector, MongoDB and S3 resource adapters. |
+| [`muscles-migrations`](https://github.com/butkoden/muscles-migrations) | Compatibility imports for migration registries and sources. |
+| [`muscles-permissions`](https://github.com/butkoden/muscles-permissions) | Permission catalog, role and policy contracts. |
 | [`muscles-otel`](https://github.com/butkoden/muscles-otel) | Optional OpenTelemetry instrumentation for framework lifecycle, runtime dispatch and action execution. |
 | [`muscles-documents`](https://github.com/butkoden/muscles-documents) | Document source loading, parsing, chunking, metadata and sync actions. |
 | [`muscles-ai`](https://github.com/butkoden/muscles-ai) | Read-only AI/RAG actions, retrieval and diagnostics that can compose with documents/data integrations. |

@@ -61,7 +61,7 @@ class App(metaclass=ApplicationMeta):
 ```python
 import logging
 from muscles import Context
-from muscles_wsgi import WsgiStrategy
+from muscles.wsgi import WsgiStrategy
 
 logger = logging.getLogger("butko.site")
 

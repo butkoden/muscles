@@ -1,7 +1,7 @@
 # Framework Package Lifecycle
 
 `muscles` exposes a neutral lifecycle for framework packages such as
-`muscles-ai`, `muscles-documents`, `muscles-sql`, protocol projections and
+`muscles-ai`, `muscles-documents`, `muscles-data`, `muscles-data-sql`, protocol projections and
 future data/storage packages.
 
 Use this API when a package needs to add framework capabilities to one Muscles
@@ -220,7 +220,7 @@ Shape:
 
 ## Neutral Telemetry
 
-Core does not import `muscles_otel`. Packages can provide telemetry through:
+Core does not import `muscles.otel`. Packages can provide telemetry through:
 
 - `app.telemetry`
 - `app.telemetry_provider`

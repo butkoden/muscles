@@ -11,6 +11,8 @@ class ApplicationRegistry:
     routes: list[Any] = field(default_factory=list)
     schemas: list[Any] = field(default_factory=list)
     rules: list[Any] = field(default_factory=list)
+    permissions: dict[str, Any] = field(default_factory=dict)
+    permission_policy_extensions: dict[str, dict[str, Any]] = field(default_factory=dict)
     events: dict[str, list[Any]] = field(default_factory=dict)
     cli: list[Any] = field(default_factory=list)
     actions: list[Any] = field(default_factory=list)
@@ -30,6 +32,37 @@ class ApplicationRegistry:
 
     def add_rule(self, rule: Any) -> None:
         self.rules.append(rule)
+
+    def add_permission(self, permission: Any) -> None:
+        permission_id = getattr(permission, "id", None)
+        if not isinstance(permission_id, str) or not permission_id:
+            raise ValueError("Permission must have an id")
+        if permission_id in self.permissions:
+            raise ValueError(f"Duplicate permission: {permission_id}")
+        existing = getattr(permission, "policies", {})
+        collisions = set(existing) & set(self.permission_policy_extensions.get(permission_id, {}))
+        if collisions:
+            raise ValueError(f"Duplicate permission policies for {permission_id}: {sorted(collisions)}")
+        self.permissions[permission_id] = permission
+
+    def add_permission_policy(self, extension: Any) -> None:
+        permission_id = getattr(extension, "permission_id", None)
+        policy_id = getattr(extension, "policy_id", None)
+        policy = getattr(extension, "policy", None)
+        if (not isinstance(permission_id, str) or not permission_id
+                or not isinstance(policy_id, str) or not policy_id
+                or not callable(getattr(policy, "handler", None))):
+            raise ValueError("Invalid permission policy extension")
+        existing = self.permission_policy_extensions.get(permission_id, {})
+        base = self.permissions.get(permission_id)
+        if policy_id in existing or (base is not None and policy_id in getattr(base, "policies", {})):
+            raise ValueError(f"Duplicate permission policy: {permission_id}:{policy_id}")
+        self.permission_policy_extensions.setdefault(permission_id, {})[policy_id] = policy
+
+    def validate_permission_extensions(self) -> None:
+        missing = set(self.permission_policy_extensions) - set(self.permissions)
+        if missing:
+            raise ValueError(f"Unknown permissions for policy extensions: {sorted(missing)}")
 
     def add_cli(self, command: Any) -> None:
         self.cli.append(command)

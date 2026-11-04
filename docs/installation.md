@@ -6,16 +6,16 @@ This page defines canonical installation paths for the Muscles ecosystem.
 
 - Public framework name: `Muscles`.
 - Technical package names follow the `muscles-*` ecosystem convention.
-- Current canonical install method: PyPI for release artifacts; GitHub source
-  installs remain available for development checkouts.
-- The current release-candidate core is `muscles==1.0.0rc3`.
+- Canonical install method: PyPI. GitHub source installs are for development
+  checkouts.
+- The current release-candidate core is `muscles==1.0.0rc5`.
 
 ## Install Matrix
 
 ### Core Only
 
 ```bash
-pip install "muscles>=1.0.0rc3,<2.0.0"
+pip install "muscles>=1.0.0rc5,<2.0.0"
 ```
 
 Use this when you need shared primitives only: application model, schemas, routing tree, lifecycle and rules metadata.
@@ -55,17 +55,42 @@ pip install muscles-mcp
 Use these when an application action model must be exposed through JSON-RPC,
 Server-Sent Events or Model Context Protocol.
 
+### Data Layer
+
+```bash
+pip install muscles-data
+pip install muscles-data-sqlalchemy
+```
+
+`muscles-data` contains typed ports, resource configuration/runtime and the
+migration registry. Install only the adapters used by the application:
+
+```bash
+pip install muscles-data-elasticsearch
+pip install muscles-data-opensearch
+pip install muscles-data-redis
+pip install muscles-data-qdrant
+pip install muscles-data-mongodb
+pip install muscles-data-s3
+```
+
+The native SQL distribution is named `muscles-data-sql`:
+
+```bash
+pip install muscles-data-sql
+```
+
 ### Framework Extensions
 
 ```bash
-pip install muscles-sql
-pip install git+https://github.com/butkoden/muscles-otel.git
-pip install git+https://github.com/butkoden/muscles-documents.git
+pip install muscles-otel
+pip install muscles-documents
 pip install muscles-ai
 ```
 
-Use these for SQL persistence, observability, document ingestion and read-only
-AI/RAG flows that should remain transport-agnostic.
+Use these for observability, document ingestion and read-only AI/RAG flows that
+should remain transport-agnostic. SQL persistence belongs to the data packages
+above.
 
 ### Full/Development Setup (All Repositories)
 
@@ -77,7 +102,7 @@ git clone https://github.com/butkoden/muscles-cli.git
 git clone https://github.com/butkoden/muscles-jsonrpc.git
 git clone https://github.com/butkoden/muscles-sse.git
 git clone https://github.com/butkoden/muscles-mcp.git
-git clone https://github.com/butkoden/muscles-sql.git
+git clone https://github.com/butkoden/muscles-data-sql.git muscles-data-sql
 git clone https://github.com/butkoden/muscles-otel.git
 git clone https://github.com/butkoden/muscles-documents.git
 git clone https://github.com/butkoden/muscles-ai.git
@@ -87,7 +112,7 @@ git clone https://github.com/butkoden/muscles-benchmarks.git
 Run tests from each repository with sibling `src` paths on `PYTHONPATH`:
 
 ```bash
-PYTHONPATH=../muscles/src:../muscles-wsgi/src:../muscles-asgi/src:../muscles-cli/src:../muscles-jsonrpc/src:../muscles-sse/src:../muscles-mcp/src:../muscles-sql/src:../muscles-otel/src:../muscles-documents/src:../muscles-ai/src python -m pytest -q
+PYTHONPATH=../muscles/src:../muscles-wsgi/src:../muscles-asgi/src:../muscles-cli/src:../muscles-jsonrpc/src:../muscles-sse/src:../muscles-mcp/src:../muscles-data/src:../muscles-data-sql/src:../muscles-data-sqlalchemy/src:../muscles-otel/src:../muscles-documents/src:../muscles-ai/src python -m pytest -q
 ```
 
 ## Packaging Decision For Now
@@ -118,7 +143,11 @@ Planned follow-up:
 - Protocol packages (`muscles-jsonrpc`, `muscles-sse`, `muscles-mcp`):
   - README points to core and explains which projection it owns.
   - Public behavior is discovered from core actions/inspect contracts.
-- Extension packages (`muscles-sql`, `muscles-otel`, `muscles-documents`, `muscles-ai`):
+- Data packages (`muscles-data`, `muscles-data-sql`, and backend adapters):
+  - `muscles-data` owns resource contracts, runtime and migration registry.
+  - `muscles-data-sql` owns native SQL connections and SQL migration backends.
+  - backend adapters own their provider-specific clients and ports.
+- Extension packages (`muscles-otel`, `muscles-documents`, `muscles-ai`):
   - README points to core and explains which framework capability it owns.
   - Capabilities stay transport-agnostic and expose behavior through actions or explicit runtime hooks.
 - `muscles-benchmarks`:

@@ -7,7 +7,7 @@ from .base import BaseResponse
 from .bytes import BytesResponse
 from .html import HtmlResponse
 from .json import JsonResponse
-from .no_content import NoContentResponse
+from muscles.core.response.no_content import NoContentResponse
 
 
 def normalize_response(value: Any, request=None) -> BaseResponse:

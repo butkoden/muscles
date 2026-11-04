@@ -9,6 +9,7 @@ import traceback
 from abc import abstractmethod, ABC
 from .dependency import Dependency
 from .registry import ApplicationRegistry
+from .application_context import reset_application, set_application
 
 
 PackagePaths = typing.Union[list[str], dict[str, str]]
@@ -124,6 +125,14 @@ class ApplicationMeta(type):
         """
         if cls not in cls._instances:
             instance = super(ApplicationMeta, cls).__call__(*args, **kwargs)
+            token = set_application(instance)
+            try:
+                if hasattr(instance, "modules"):
+                    instance.load_modules(
+                        instance.modules
+                    )
+            finally:
+                reset_application(token)
             if not hasattr(instance, "__muscles_registry__"):
                 instance.__muscles_registry__ = ApplicationRegistry()
             if not hasattr(instance, "action"):
