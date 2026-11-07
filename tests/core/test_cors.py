@@ -25,18 +25,34 @@ def test_cors_preflight_response():
 
 
 def test_cors_preflight_allows_bearer_profile_request():
+    class HttpRequest:
+        method = "OPTIONS"
+        origin = "http://example.test"
+
     middleware = cors(
         allow_origins=["http://example.test"],
         allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
         allow_headers=["Authorization", "Content-Type"],
     )
 
-    response = middleware.preflight_response(Request())
+    response = middleware.preflight_response(HttpRequest())
 
     assert response.status == 204
     assert response.headers["Access-Control-Allow-Origin"] == "http://example.test"
     assert response.headers["Access-Control-Allow-Headers"] == "Authorization, Content-Type"
     assert "GET" in response.headers["Access-Control-Allow-Methods"]
+
+
+def test_cors_does_not_advertise_a_different_origin_for_disallowed_request():
+    class DisallowedRequest:
+        method = "OPTIONS"
+        origin = "http://composiva.loc"
+
+    middleware = cors(allow_origins=["https://composiva.loc"])
+
+    response = middleware.preflight_response(DisallowedRequest())
+
+    assert "Access-Control-Allow-Origin" not in response.headers
 
 
 def test_cors_preserves_protocol_responses_with_header_append():

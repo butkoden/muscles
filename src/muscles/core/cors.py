@@ -24,16 +24,16 @@ class CorsMiddleware:
         origin = getattr(request, "origin", None)
         if origin and ("*" in self.allow_origins or origin in self.allow_origins):
             return origin
-        if "*" in self.allow_origins:
-            return "*"
-        return self.allow_origins[0] if self.allow_origins else "*"
+        return "*" if "*" in self.allow_origins else None
 
     def _headers(self, request):
         headers = {
-            "Access-Control-Allow-Origin": self._origin(request),
             "Access-Control-Allow-Methods": ", ".join(self.allow_methods),
             "Access-Control-Allow-Headers": ", ".join(self.allow_headers),
         }
+        origin = self._origin(request)
+        if origin is not None:
+            headers["Access-Control-Allow-Origin"] = origin
         if self.allow_credentials:
             headers["Access-Control-Allow-Credentials"] = "true"
         if self.max_age is not None:
