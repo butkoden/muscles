@@ -49,6 +49,12 @@ class PackageService:
     kwargs: dict[str, Any] = field(default_factory=dict)
 
 
+@dataclass(frozen=True)
+class PackageExtension:
+    target: str
+    value: Any
+
+
 class MusclesPackage(ModuleLoader):
     """Base contract for framework packages installed through Muscles core."""
 
@@ -100,6 +106,9 @@ class MusclesPackage(ModuleLoader):
         return []
 
     def permission_policies(self, *args: Any, **kwargs: Any) -> Any:
+        return []
+
+    def extensions(self, *args: Any, **kwargs: Any) -> Any:
         return []
 
     def inspection_provider(self, *args: Any, **kwargs: Any) -> Any:
@@ -180,6 +189,16 @@ def install_package(app, config: Any, package: Any):
         )
         for extension in extensions or []:
             registry.add_permission_policy(extension)
+
+        package_extensions = call_optional_package_hook(
+            package,
+            "extensions",
+            default=[],
+            ordered_names=("app", "runtime", "config"),
+            values={"app": app, "runtime": runtime, "config": package_config},
+        )
+        for extension in package_extensions or []:
+            registry.add_extension(extension)
 
         with telemetry.span("muscles.package.inspect.register", **attributes):
             provider = call_optional_package_hook(
@@ -365,7 +384,13 @@ def doctor_application(app=None) -> dict[str, Any]:
             overall = "error"
         elif status in {"warning", "warn"} and overall == "ok":
             overall = "warning"
-    return {"status": overall, "packages": packages}
+    unhandled = registry.unhandled_extensions()
+    result = {"status": overall, "packages": packages}
+    if unhandled:
+        if overall == "ok":
+            result["status"] = "warning"
+        result["unhandled_extensions"] = unhandled
+    return result
 
 
 def collect_package_capabilities(app) -> dict[str, Any]:

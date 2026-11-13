@@ -112,6 +112,7 @@ defaults:
 - `build_runtime` -> `None`
 - `services` -> `[]`
 - `actions` -> `[]`
+- `extensions` -> `[]`
 - `inspection_provider` -> `None`
 - `doctor_provider` -> `None`
 - `generator_providers` -> `[]`
@@ -128,6 +129,7 @@ Each hook has one job:
 | `build_runtime(app, config)` | Build the package runtime object when the package needs one. | Returned from `install_package(...)`; `None` when omitted |
 | `services(app, runtime, config)` | Register live services for app code to resolve. | `DependencyContainer` |
 | `actions(app, runtime, config)` | Register protocol-neutral callable contracts. | `ApplicationRegistry.actions` |
+| `extensions(app, runtime, config)` | Contribute values to a named extension point. | `ApplicationRegistry.extensions` |
 | `inspection_provider(app, runtime, config)` | Expose safe capability data for tooling. | `ApplicationRegistry.inspection_providers` |
 | `doctor_provider(app, runtime, config)` | Expose health/readiness checks. | `ApplicationRegistry.doctor_providers` |
 | `generator_providers(app, runtime, config)` | Add code/document generation providers. | `ApplicationRegistry.generator_registry` |
@@ -135,6 +137,71 @@ Each hook has one job:
 All hooks may be omitted. A package without `build_runtime(...)` can still
 register services, actions, inspection providers, doctor providers or generator
 providers; those hooks receive `runtime=None`.
+
+## Package extensions
+
+An extension lets one package contribute a value to an extension point owned by
+another package. Core stores and delivers values by target name; the consumer
+defines their type and meaning. `PackageExtension` and
+`get_application_registry` are available from `muscles.core`.
+
+```python
+from muscles.core import (
+    MusclesPackage, PackageExtension, PackageService,
+    get_application_registry, install_package,
+)
+
+
+class HandlerRegistry:
+    def __init__(self):
+        self.handlers = []
+
+    def register(self, handler):
+        self.handlers.append(handler)
+
+
+class ConsumerPackage(MusclesPackage):
+    namespace = "consumer"
+
+    def services(self, app, runtime):
+        handlers = HandlerRegistry()
+        get_application_registry(app).subscribe_extensions(
+            "example.handlers", handlers.register,
+        )
+        return [PackageService(HandlerRegistry, handlers)]
+
+
+class ProducerPackage(MusclesPackage):
+    namespace = "producer"
+
+    def extensions(self, app, runtime):
+        return [PackageExtension("example.handlers", "handler from producer")]
+
+
+app = App()
+install_package(app, {}, ProducerPackage())
+install_package(app, {}, ConsumerPackage())
+assert app.container.resolve(HandlerRegistry).handlers == ["handler from producer"]
+```
+
+The order of these two installations can be reversed. Subscribing synchronously
+replays existing values in registration order; adding an extension synchronously
+delivers its value to existing subscribers. Subscriptions and values are local
+to the application registry. Consumers must validate values and handle duplicate
+registrations themselves. Callback exceptions propagate to the caller: there is
+no retry, automatic rollback across subscribers, unsubscribe, or removal API.
+Subscribe once per consumer and avoid irreversible work in callbacks.
+
+An extension with no subscriber remains stored for a later subscriber.
+`get_application_registry(app).unhandled_extensions()` reports target names and
+counts; `doctor_application(app)` reports them as `unhandled_extensions` and
+sets status to `warning` unless another check already reports an error.
+The registry stores contributed values in memory, so extension values should
+be declarations rather than database connections or other live clients.
+Required consumers and cross-package validation are the responsibility of the
+application or consuming package after installation completes.
+
+Русская версия: [Расширения пакетов](package-extensions.ru.md).
 
 ## Runtime State Rule
 

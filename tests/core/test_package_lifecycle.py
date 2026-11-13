@@ -3,6 +3,7 @@ from __future__ import annotations
 from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Any
 
 from muscles.core import (
@@ -211,6 +212,30 @@ def test_install_package_supports_keyword_only_config_hooks():
     runtime = install_package(app, {"endpoint": "keyword"}, KeywordConfigPackage())
 
     assert app.container.resolve(DemoRuntime) is runtime
+
+
+def test_install_package_registers_generic_extensions():
+    from muscles.core import PackageExtension
+    handler = object()
+
+    class PermissionResourcePackage(MusclesPackage):
+        namespace = "notes"
+
+        def extensions(self):
+            return [PackageExtension("example.resources", handler)]
+
+    app = DemoApp()
+    install_package(app, {}, PermissionResourcePackage())
+
+    registry = get_application_registry(app)
+    assert registry.unhandled_extensions() == {"example.resources": 1}
+    assert doctor_application(app)["unhandled_extensions"] == {"example.resources": 1}
+    received = []
+    registry.subscribe_extensions("example.resources", received.append)
+    assert received == [handler]
+    assert registry.unhandled_extensions() == {}
+    registry.add_extension(PackageExtension("example.resources", "later"))
+    assert received == [handler, "later"]
 
 
 def test_install_package_accepts_partial_package_without_optional_hooks():

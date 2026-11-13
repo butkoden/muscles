@@ -13,6 +13,8 @@ class ApplicationRegistry:
     rules: list[Any] = field(default_factory=list)
     permissions: dict[str, Any] = field(default_factory=dict)
     permission_policy_extensions: dict[str, dict[str, Any]] = field(default_factory=dict)
+    extensions: dict[str, list[Any]] = field(default_factory=dict)
+    extension_subscribers: dict[str, list[Any]] = field(default_factory=dict, repr=False)
     events: dict[str, list[Any]] = field(default_factory=dict)
     cli: list[Any] = field(default_factory=list)
     actions: list[Any] = field(default_factory=list)
@@ -63,6 +65,26 @@ class ApplicationRegistry:
         missing = set(self.permission_policy_extensions) - set(self.permissions)
         if missing:
             raise ValueError(f"Unknown permissions for policy extensions: {sorted(missing)}")
+
+    def add_extension(self, extension: Any) -> None:
+        target = getattr(extension, "target", None)
+        if not isinstance(target, str) or not target:
+            raise ValueError("Package extension must declare a target")
+        for subscriber in self.extension_subscribers.get(target, ()):
+            subscriber(extension.value)
+        self.extensions.setdefault(target, []).append(extension.value)
+
+    def subscribe_extensions(self, target: str, subscriber: Any) -> None:
+        if not isinstance(target, str) or not target or not callable(subscriber):
+            raise ValueError("Extension target and callable subscriber are required")
+        for value in self.extensions.get(target, ()):
+            subscriber(value)
+        self.extension_subscribers.setdefault(target, []).append(subscriber)
+
+    def unhandled_extensions(self) -> dict[str, int]:
+        """Return extension targets that have no installed consumer."""
+        return {target: len(values) for target, values in self.extensions.items()
+                if not self.extension_subscribers.get(target)}
 
     def add_cli(self, command: Any) -> None:
         self.cli.append(command)

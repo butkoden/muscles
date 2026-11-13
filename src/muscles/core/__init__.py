@@ -20,7 +20,7 @@ from .core import RuntimeMode, resolve_runtime_mode, app_runtime_mode, is_develo
 from .core import inspect_application
 from .core import GenerationRequest, GeneratorProvider, GeneratorRegistry
 from .core import ApplicationRegistry, get_application_registry
-from .core import MusclesPackage, NoopTelemetry, PackageService, TelemetryProvider
+from .core import MusclesPackage, NoopTelemetry, PackageService, PackageExtension, TelemetryProvider
 from .core import collect_package_capabilities, collect_packages, doctor_application, ensure_container
 from .core import install_package, resolve_package_config, resolve_telemetry, sanitize_payload
 from .core import ActionContext, ActionContract, ActionDispatcher, ActionResult, ApplicationContract
@@ -246,6 +246,7 @@ __all__ = (
     "MusclesPackage",
     "NoopTelemetry",
     "PackageService",
+    "PackageExtension",
     "TelemetryProvider",
     "collect_package_capabilities",
     "collect_packages",
